@@ -10,12 +10,12 @@ public class LogiCoreDbContext : DbContext
     {
     }
 
-    public DbSet<Package> Packages { get; set; }
+    public DbSet<Package> Packages { get; set; } 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         // Configuration
         modelBuilder.Entity<Package>(entity =>
         {
