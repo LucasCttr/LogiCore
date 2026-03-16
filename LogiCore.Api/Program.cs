@@ -29,6 +29,9 @@ builder.Services.AddScoped<CreatePackageUseCase>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageRequestValidator>();
 
+// ProblemDetails para manejo de errores
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

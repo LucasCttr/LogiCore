@@ -1,0 +1,80 @@
+using LogiCore.Domain.Common.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+
+namespace LogiCore.Api.Middlewares;
+
+public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    {
+        logger.LogError(exception, "Unhandled error: {Message}", exception.Message);
+
+        if (httpContext.Response.HasStarted)
+        {
+            logger.LogWarning("The response has already started, the global exception handler will not modify the response.");
+            return false;
+        }
+
+        // Determina si estamos en desarrollo para mostrar detalles de la excepción
+        var env = httpContext.RequestServices.GetService<Microsoft.Extensions.Hosting.IHostEnvironment>();
+        var isDevelopment = env?.IsDevelopment() == true;
+
+        // Mapeo de excepciones a códigos de estado HTTP
+        var (statusCode, title) = exception switch
+        {
+            PackageWeightException => (StatusCodes.Status400BadRequest, "Invalid Package Weight"),
+            KeyNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
+            DomainException => (StatusCodes.Status400BadRequest, "Invalid Domain Operation"),
+            FluentValidation.ValidationException => (StatusCodes.Status400BadRequest, "Validation Failed"),
+            _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
+        };
+
+        httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.ContentType = "application/problem+json";
+
+        // Build ProblemDetails (or ValidationProblemDetails)
+        if (exception is FluentValidation.ValidationException valEx)
+        {
+            var errors = new Dictionary<string, string[]>();
+            foreach (var failure in valEx.Errors)
+            {
+                if (!errors.TryGetValue(failure.PropertyName, out var list))
+                {
+                    errors[failure.PropertyName] = new[] { failure.ErrorMessage };
+                }
+                else
+                {
+                    var merged = list.Concat(new[] { failure.ErrorMessage }).ToArray();
+                    errors[failure.PropertyName] = merged;
+                }
+            }
+
+            var validationProblem = new ValidationProblemDetails(errors)
+            {
+                Status = statusCode,
+                Title = title,
+                Instance = httpContext.Request.Path
+            };
+            validationProblem.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+            await httpContext.Response.WriteAsJsonAsync(validationProblem, cancellationToken);
+            return true;
+        }
+
+        var detail = isDevelopment ? exception.Message : "An error occurred while processing the request.";
+
+        var problemDetails = new ProblemDetails
+        {
+            Status = statusCode,
+            Title = title,
+            Detail = detail,
+            Instance = httpContext.Request.Path
+        };
+        problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+
+        return true; // Indica que la excepción fue manejada
+    }
+}
