@@ -1,4 +1,5 @@
 using LogiCore.Application.UseCases;
+using LogiCore.Application.Common.Interfaces.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using LogiCore.Api.Models.DTOs;
 using LogiCore.Application.Commands;
@@ -13,11 +14,13 @@ public class PackagesController : ControllerBase
 {
     private readonly CreatePackageUseCase _createPackageUseCase;
     private readonly IMapper _mapper;
+    private readonly IPackageRepository _repository;
 
-    public PackagesController(CreatePackageUseCase createPackageUseCase, IMapper mapper)
+    public PackagesController(CreatePackageUseCase createPackageUseCase, IMapper mapper, IPackageRepository repository)
     {
         _createPackageUseCase = createPackageUseCase;
         _mapper = mapper;
+        _repository = repository;
     }
 
     [HttpGet]
@@ -27,12 +30,19 @@ public class PackagesController : ControllerBase
 
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var package = await _repository.GetByIdAsync(id);
+        if (package is null) return NotFound();
+        return Ok(package);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePackageRequest request)
     {
         var cmd = _mapper.Map<CreatePackageCommand>(request);
-        await _createPackageUseCase.ExecuteAsync(cmd);
-        return Ok();
-
+        var id = await _createPackageUseCase.ExecuteAsync(cmd);
+        return CreatedAtAction(nameof(GetById), new { id }, null);
     }
 }

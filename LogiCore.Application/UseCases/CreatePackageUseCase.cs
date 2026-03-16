@@ -17,11 +17,15 @@ namespace LogiCore.Application.UseCases
             _packageRepository = packageRepository;
         }
 
-        public async Task ExecuteAsync(CreatePackageCommand cmd)
+        
+        public async Task<Guid> ExecuteAsync(CreatePackageCommand command)
         {
-            var package = new Package(cmd.TrackingNumber, cmd.RecipientName, cmd.Weight);
+            var package = new Package(command.TrackingNumber, command.RecipientName, command.Weight);
+            
             await _packageRepository.AddAsync(package);
             await _packageRepository.SaveChangesAsync();
+
+            return package.Id;
         }
     }
 }

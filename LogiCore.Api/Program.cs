@@ -1,3 +1,12 @@
+using Microsoft.EntityFrameworkCore;
+using LogiCore.Infrastructure.Persistence;
+using LogiCore.Application.Common.Interfaces.Persistence;
+using LogiCore.Infrastructure.Repositories;
+using LogiCore.Application.UseCases;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using LogiCore.Api.Validators;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -8,6 +17,17 @@ builder.Services.AddSwaggerGen();
 // Add controllers and AutoMapper
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
+// Persistence and application wiring
+builder.Services.AddDbContext<LogiCoreDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
+builder.Services.AddScoped<CreatePackageUseCase>();
+
+// FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageRequestValidator>();
 
 var app = builder.Build();
 
@@ -39,6 +59,8 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast")
 .WithOpenApi();
+
+app.MapControllers();
 
 app.Run();
 
