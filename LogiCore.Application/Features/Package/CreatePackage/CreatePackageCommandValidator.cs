@@ -1,10 +1,10 @@
-namespace LogiCore.Api.Validators;
-using FluentValidation;
-using LogiCore.Api.Models.DTOs;
 
-public class CreatePackageRequestValidator : AbstractValidator<CreatePackageRequest>
+using FluentValidation;
+
+namespace LogiCore.Application.Features.Package; 
+public class CreatePackageCommandValidator : AbstractValidator<CreatePackageCommand>
 {
-    public CreatePackageRequestValidator()
+    public CreatePackageCommandValidator()
     {
         RuleFor(x => x.TrackingNumber)
             .NotEmpty().WithMessage("TrackingNumber is required.")

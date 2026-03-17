@@ -10,19 +10,21 @@ public class Package
     public decimal Weight { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    // Constructor para inicializar el objeto
-    public Package(string trackingNumber, string recipientName, decimal weight)
+    // Factory estática para creación controlada y validación del dominio
+    public static Package Create(string trackingNumber, string recipientName, decimal weight)
     {
-        if (weight <= 0)
-        throw new PackageWeightException("Weight must be greater than zero.");
-        
-        Id = Guid.NewGuid();
-        TrackingNumber = trackingNumber;
-        RecipientName = recipientName;
-        Weight = weight;
-        CreatedAt = DateTime.UtcNow;
+        if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero.");
+        if (string.IsNullOrWhiteSpace(trackingNumber)) throw new ArgumentException("Tracking inválido.", nameof(trackingNumber));
+
+        return new Package
+        {
+            Id = Guid.NewGuid(),
+            TrackingNumber = trackingNumber,
+            RecipientName = recipientName,
+            Weight = weight,
+            CreatedAt = DateTime.UtcNow
+        };
     }
 
-    // .NET necesita un constructor vacío para Entity Framework (EF)
-    protected Package() { } 
+    protected Package() { }
 }

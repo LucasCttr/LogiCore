@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LogiCore.Api.Middlewares;
-
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
@@ -75,6 +74,6 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
-        return true; // Indica que la excepción fue manejada
+        return true; 
     }
 }

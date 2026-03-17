@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using LogiCore.Infrastructure.Persistence;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Infrastructure.Repositories;
-using LogiCore.Application.UseCases;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using LogiCore.Api.Validators;
+using LogiCore.Application.Validators;
+using MediatR;
+using LogiCore.Application.Handlers;
+using LogiCore.Application.Common.Behaviors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,19 +17,25 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add controllers and AutoMapper
-builder.Services.AddControllers();
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<LogiCore.Api.Filters.ResultActionFilter>();
+});
+builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCommandHandler).Assembly);
 
 // Persistence and application wiring
 builder.Services.AddDbContext<LogiCoreDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
-builder.Services.AddScoped<CreatePackageUseCase>();
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageCommandValidator>();
+
+// MediatR
+builder.Services.AddMediatR(typeof(CreatePackageCommandHandler).Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestValidationBehavior<,>));
 
 // ProblemDetails para manejo de errores
 builder.Services.AddProblemDetails();
