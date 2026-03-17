@@ -5,7 +5,7 @@ using LogiCore.Application.DTOs;
 using System.Linq;
 using AutoMapper;
 
-namespace LogiCore.Application.Features.Package;
+namespace LogiCore.Application.Features.Packages;
 
 public class GetAllPackagesHandler : IRequestHandler<GetAllPackagesQuery, PagedResponse<PackageDto>>
 {

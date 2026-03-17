@@ -4,9 +4,8 @@ using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Infrastructure.Repositories;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using LogiCore.Application.Validators;
+using LogiCore.Application.Features.Packages;
 using MediatR;
-using LogiCore.Application.Handlers;
 using LogiCore.Application.Common.Behaviors;
 
 var builder = WebApplication.CreateBuilder(args);

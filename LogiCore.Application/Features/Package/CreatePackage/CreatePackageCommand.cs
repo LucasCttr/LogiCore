@@ -1,7 +1,7 @@
 using MediatR;
 using LogiCore.Application.Common.Models;
 
-namespace LogiCore.Application.Features.Package; 
+namespace LogiCore.Application.Features.Packages;
 public class CreatePackageCommand : IRequest<Result<Guid>>
 {
     public required string TrackingNumber { get; init; }

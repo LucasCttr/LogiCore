@@ -4,7 +4,7 @@ using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
 using MediatR;
 
-namespace LogiCore.Application.Features.Package;
+namespace LogiCore.Application.Features.Packages;
 
 public class GetPackageByIdHandler : IRequestHandler<GetPackageByIdQuery, Result<PackageDto>>
 {

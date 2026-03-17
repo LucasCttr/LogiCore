@@ -1,7 +1,7 @@
 
 using FluentValidation;
 
-namespace LogiCore.Application.Features.Package; 
+namespace LogiCore.Application.Features.Packages;
 public class CreatePackageCommandValidator : AbstractValidator<CreatePackageCommand>
 {
     public CreatePackageCommandValidator()

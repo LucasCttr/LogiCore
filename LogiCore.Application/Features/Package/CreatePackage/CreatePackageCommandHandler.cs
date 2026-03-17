@@ -3,7 +3,7 @@ using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Application.Common.Models;
 using LogiCore.Domain.Entities;
 
-namespace LogiCore.Application.Features.Package; 
+namespace LogiCore.Application.Features.Packages;
 public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand, Result<Guid>>
 {
     private readonly IPackageRepository _packageRepository;
@@ -15,7 +15,7 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
     public async Task<Result<Guid>> Handle(CreatePackageCommand request, CancellationToken cancellationToken)
     {
-        var package = LogiCore.Domain.Entities.Package.Create(request.TrackingNumber, request.RecipientName, request.Weight);
+        var package = Package.Create(request.TrackingNumber, request.RecipientName, request.Weight);
         await _packageRepository.AddAsync(package);
         await _packageRepository.SaveChangesAsync();
         return Result<Guid>.Success(package.Id);

@@ -6,7 +6,7 @@ using LogiCore.Application.Common.Models;
 using LogiCore.Api.Models.DTOs;
 using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
-using LogiCore.Application.Features.Package;
+using LogiCore.Application.Features.Packages;
 
 namespace LogiCore.Api.Controllers;
 

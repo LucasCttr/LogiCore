@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace LogiCore.Application.Features.Package;
+namespace LogiCore.Application.Features.Packages;
 public class GetAllPackagesQueryValidator : AbstractValidator<GetAllPackagesQuery>
 {
     private const int MaxPageSize = 100;
