@@ -26,5 +26,24 @@ public class Package
         };
     }
 
+    // Methods to update fields with encapsulated validation
+    public void UpdateTrackingNumber(string trackingNumber)
+    {
+        if (string.IsNullOrWhiteSpace(trackingNumber)) throw new ArgumentException("Tracking inválido.", nameof(trackingNumber));
+        TrackingNumber = trackingNumber;
+    }
+
+    public void UpdateRecipientName(string recipientName)
+    {
+        if (string.IsNullOrWhiteSpace(recipientName)) throw new ArgumentException("Recipient name inválido.", nameof(recipientName));
+        RecipientName = recipientName;
+    }
+
+    public void UpdateWeight(decimal weight)
+    {
+        if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero.");
+        Weight = weight;
+    }
+
     protected Package() { }
 }

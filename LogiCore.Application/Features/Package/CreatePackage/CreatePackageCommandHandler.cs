@@ -17,7 +17,7 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
     {
         var package = Package.Create(request.TrackingNumber, request.RecipientName, request.Weight);
         await _packageRepository.AddAsync(package);
-        await _packageRepository.SaveChangesAsync();
+        // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
         return Result<Guid>.Success(package.Id);
     }
 }

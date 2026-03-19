@@ -9,5 +9,6 @@ public class PackageProfile : Profile
     public PackageProfile()
     {
         CreateMap<CreatePackageRequest, CreatePackageCommand>();
+        CreateMap<UpdatePackageRequest, UpdatePackageCommand>();
     }
 }

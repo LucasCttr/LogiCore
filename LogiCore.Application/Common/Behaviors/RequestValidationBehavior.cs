@@ -3,6 +3,9 @@ using MediatR;
 
 namespace LogiCore.Application.Common.Behaviors;
 
+/// <summary>
+/// Pipeline behavior that validates incoming requests using FluentValidation validators.   
+/// </summary>
 public class RequestValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 

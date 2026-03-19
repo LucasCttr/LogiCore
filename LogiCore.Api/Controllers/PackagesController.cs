@@ -25,7 +25,7 @@ public class PackagesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<PackageDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<PagedResponse<PackageDto>>> GetByPage([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetAllPackagesQuery(page, pageSize));
         return result;
@@ -44,5 +44,14 @@ public class PackagesController : ControllerBase
         var cmd = _mapper.Map<CreatePackageCommand>(request);
         var result = await _mediator.Send(cmd);
         return result; // filter applyed in ResultActionFilter
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Result<PackageDto>>> Update(Guid id, [FromBody] UpdatePackageRequest request)
+    {
+        var cmd = _mapper.Map<UpdatePackageCommand>(request);
+        cmd = cmd with { Id = id }; // set the id from route to the command
+        var result = await _mediator.Send(cmd);
+        return result; // filter applyed in ResultActionFilter  
     }
 }

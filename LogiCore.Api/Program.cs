@@ -28,6 +28,9 @@ builder.Services.AddDbContext<LogiCoreDbContext>(options =>
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
 
+// UnitOfWork: centralize commits
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageCommandValidator>();
@@ -35,6 +38,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageCommandValidat
 // MediatR
 builder.Services.AddMediatR(typeof(CreatePackageCommandHandler).Assembly);
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestValidationBehavior<,>));
+
+// Commit changes after handlers
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LogiCore.Application.Common.Behaviors.SaveChangesBehavior<,>));
 
 // Global exception handling
 builder.Services.AddExceptionHandler<LogiCore.Api.Middlewares.GlobalExceptionHandler>();

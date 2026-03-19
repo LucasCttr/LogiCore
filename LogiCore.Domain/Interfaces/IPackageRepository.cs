@@ -12,6 +12,6 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
         Task<IEnumerable<Package>> GetAllAsync();
         Task<(IEnumerable<Package> Items, int TotalCount)> GetPagedAsync(int page, int pageSize);
         Task AddAsync(Package package);
-        Task SaveChangesAsync();
+        Task<Package> UpdateAsync(Package package);
     }
 }

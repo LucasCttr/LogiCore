@@ -37,5 +37,11 @@ public class SqlPackageRepository : IPackageRepository
     public async Task<Package?> GetByIdAsync(Guid id) =>
         await _context.Packages.FindAsync(id);
 
-    public async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+    public Task<Package> UpdateAsync(Package package)
+    {
+        _context.Packages.Update(package)
+        ;
+        // Do not call SaveChanges here: commit is handled by UnitOfWork/SaveChangesBehavior
+        return Task.FromResult(package);
+    }
 }
