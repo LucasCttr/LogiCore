@@ -61,25 +61,8 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             return true;
         }
 
-        // Build a more informative detail in Development by including inner exception messages
-        string detail;
-        if (isDevelopment)
-        {
-            // Concatenate the main message and all inner exception messages for clarity
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine(exception.Message);
-            var inner = exception.InnerException;
-            while (inner != null)
-            {
-                sb.AppendLine($"Inner: {inner.Message}");
-                inner = inner.InnerException;
-            }
-            detail = sb.ToString().Trim();
-        }
-        else
-        {
-            detail = "An error occurred while processing the request.";
-        }
+        // Keep `detail` concise; in Development include inner exceptions separately in extensions
+        var detail = isDevelopment ? exception.Message : "An error occurred while processing the request.";
 
         var problemDetails = new ProblemDetails
         {
@@ -90,10 +73,23 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         };
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
-        // In Development include the full exception (stack trace) in the extensions to aid debugging
+        // In Development include the full exception (stack trace) and inner exception messages in extensions to aid debugging
         if (isDevelopment)
         {
             problemDetails.Extensions["exception"] = exception.ToString();
+
+            var innerMessages = new System.Collections.Generic.List<string>();
+            var inner = exception.InnerException;
+            while (inner != null)
+            {
+                innerMessages.Add(inner.Message);
+                inner = inner.InnerException;
+            }
+
+            if (innerMessages.Count > 0)
+            {
+                problemDetails.Extensions["innerExceptions"] = innerMessages.ToArray();
+            }
         }
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
