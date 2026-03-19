@@ -40,9 +40,9 @@ namespace LogiCore.Application.Features.Packages
             if (request.Weight.HasValue)
                 existingPackage.UpdateWeight(request.Weight.Value);
 
-            await _packageRepository.UpdateAsync(existingPackage);
+            var updatedPackage = await _packageRepository.UpdateAsync(existingPackage);
 
-            var updatedDto = _mapper.Map<PackageDto>(existingPackage);
+            var updatedDto = _mapper.Map<PackageDto>(updatedPackage);
 
             return Result<PackageDto>.Success(updatedDto);
         }

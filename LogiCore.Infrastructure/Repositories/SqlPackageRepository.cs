@@ -11,7 +11,11 @@ public class SqlPackageRepository : IPackageRepository
 
     public SqlPackageRepository(LogiCoreDbContext context) => _context = context;
 
-    public async Task AddAsync(Package package) => await _context.Packages.AddAsync(package);
+    public async Task<Package> AddAsync(Package package)
+    {
+        var entry = await _context.Packages.AddAsync(package);
+        return entry.Entity;
+    }
 
     public async Task<IEnumerable<Package>> GetAllAsync()
     {
@@ -39,9 +43,8 @@ public class SqlPackageRepository : IPackageRepository
 
     public Task<Package> UpdateAsync(Package package)
     {
-        _context.Packages.Update(package)
-        ;
+        var entry = _context.Packages.Update(package);
         // Do not call SaveChanges here: commit is handled by UnitOfWork/SaveChangesBehavior
-        return Task.FromResult(package);
+        return Task.FromResult(entry.Entity);
     }
 }

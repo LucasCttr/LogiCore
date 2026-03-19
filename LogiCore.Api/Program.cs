@@ -7,8 +7,18 @@ using FluentValidation.AspNetCore;
 using LogiCore.Application.Features.Packages;
 using MediatR;
 using LogiCore.Application.Common.Behaviors;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog early so startup logs are captured
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -74,6 +84,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Log HTTP requests (structured)
+app.UseSerilogRequestLogging();
 
 var summaries = new[]
 {

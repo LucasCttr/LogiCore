@@ -39,7 +39,7 @@ public class PackagesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Result<Guid>>> Create([FromBody] CreatePackageRequest request)
+    public async Task<ActionResult<Result<PackageDto>>> Create([FromBody] CreatePackageRequest request)
     {
         var cmd = _mapper.Map<CreatePackageCommand>(request);
         var result = await _mediator.Send(cmd);
