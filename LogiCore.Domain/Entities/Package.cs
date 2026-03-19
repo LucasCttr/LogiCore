@@ -10,7 +10,7 @@ public class Package
     public decimal Weight { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    // Factory estática para creación controlada y validación del dominio
+    // Factory method to create a new package with validation
     public static Package Create(string trackingNumber, string recipientName, decimal weight)
     {
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero.");

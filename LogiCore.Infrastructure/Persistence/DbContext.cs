@@ -5,14 +5,14 @@ namespace LogiCore.Infrastructure.Persistence;
 
 public class LogiCoreDbContext : DbContext
 {
-    public LogiCoreDbContext(DbContextOptions<LogiCoreDbContext> options)
-        : base(options) { }
+    public LogiCoreDbContext(DbContextOptions<LogiCoreDbContext> options) : base(options) { }
 
-    public DbSet<Package> Packages { get; set; } = null!;
+    public DbSet<Package> Packages => Set<Package>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        // Search and apply all configurations in the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LogiCoreDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
     }
 }

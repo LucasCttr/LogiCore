@@ -15,11 +15,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             return false;
         }
 
-        // Determina si estamos en desarrollo para mostrar detalles de la excepción
+        // determine if we are in development to include exception details
         var env = httpContext.RequestServices.GetService<Microsoft.Extensions.Hosting.IHostEnvironment>();
         var isDevelopment = env?.IsDevelopment() == true;
 
-        // Mapeo de excepciones a códigos de estado HTTP
+        // Map excepcions to status codes and titles
         var (statusCode, title) = exception switch
         {
             PackageWeightException => (StatusCodes.Status400BadRequest, "Invalid Package Weight"),
