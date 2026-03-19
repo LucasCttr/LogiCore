@@ -61,7 +61,25 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             return true;
         }
 
-        var detail = isDevelopment ? exception.Message : "An error occurred while processing the request.";
+        // Build a more informative detail in Development by including inner exception messages
+        string detail;
+        if (isDevelopment)
+        {
+            // Concatenate the main message and all inner exception messages for clarity
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine(exception.Message);
+            var inner = exception.InnerException;
+            while (inner != null)
+            {
+                sb.AppendLine($"Inner: {inner.Message}");
+                inner = inner.InnerException;
+            }
+            detail = sb.ToString().Trim();
+        }
+        else
+        {
+            detail = "An error occurred while processing the request.";
+        }
 
         var problemDetails = new ProblemDetails
         {
@@ -71,6 +89,12 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             Instance = httpContext.Request.Path
         };
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+        // In Development include the full exception (stack trace) in the extensions to aid debugging
+        if (isDevelopment)
+        {
+            problemDetails.Extensions["exception"] = exception.ToString();
+        }
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 

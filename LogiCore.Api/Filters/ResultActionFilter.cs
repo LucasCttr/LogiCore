@@ -50,7 +50,7 @@ public class ResultActionFilter : IAsyncActionFilter
                 ? StatusCodes.Status201Created
                 : StatusCodes.Status200OK;
 
-            var objectResult = new ObjectResult(innerValue) { StatusCode = statusCode };
+            var objectResult = new ObjectResult(value) { StatusCode = statusCode };
 
             if (statusCode == StatusCodes.Status201Created)
             {
