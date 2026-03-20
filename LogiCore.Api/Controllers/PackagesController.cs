@@ -3,7 +3,6 @@ using LogiCore.Application.Common.Interfaces.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using LogiCore.Application.DTOs;
 using LogiCore.Application.Common.Models;
-using LogiCore.Api.Models.DTOs;
 using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
 using LogiCore.Application.Features.Packages;
@@ -15,13 +14,10 @@ namespace LogiCore.Api.Controllers;
 public class PackagesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IMapper _mapper;
 
-
-    public PackagesController(IMediator mediator, IMapper mapper)
+    public PackagesController(IMediator mediator)
     {
         _mediator = mediator;
-        _mapper = mapper;
     }
 
     [HttpGet]
@@ -39,19 +35,17 @@ public class PackagesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Result<PackageDto>>> Create([FromBody] CreatePackageRequest request)
+    public async Task<ActionResult<Result<PackageDto>>> Create([FromBody] CreatePackageCommand request)
     {
-        var cmd = _mapper.Map<CreatePackageCommand>(request);
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(request);
         return result; // filter applyed in ResultActionFilter
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<Result<PackageDto>>> Update(Guid id, [FromBody] UpdatePackageRequest request)
+    public async Task<ActionResult<Result<PackageDto>>> Update(Guid id, [FromBody] UpdatePackageCommand request)
     {
-        var cmd = _mapper.Map<UpdatePackageCommand>(request);
-        cmd = cmd with { Id = id }; // set the id from route to the command
-        var result = await _mediator.Send(cmd);
+        request = request with { Id = id }; // set the id from route to the command
+        var result = await _mediator.Send(request);
         return result; // filter applyed in ResultActionFilter  
     }
 }

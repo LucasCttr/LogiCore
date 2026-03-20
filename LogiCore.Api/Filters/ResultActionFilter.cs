@@ -1,14 +1,15 @@
-using System;
-using System.Threading.Tasks;
+using LogiCore.Application.Common.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace LogiCore.Api.Filters;
 
 /// <summary>
-/// Converts Result&lt;T&gt; returned from actions into proper IActionResult (200/404/400).
-/// Registered globally to avoid repeating mapping in controllers.
+/// A filter for handling Result<T> responses and converting them to appropriate HTTP responses.
 /// </summary>
 public class ResultActionFilter : IAsyncActionFilter
 {
@@ -16,28 +17,23 @@ public class ResultActionFilter : IAsyncActionFilter
     {
         var executed = await next();
 
-        var objResult = executed.Result as ObjectResult;
-        if (objResult == null) return;
+        // 1. Solo interceptamos si el resultado es un ObjectResult
+        if (executed.Result is not ObjectResult objResult || objResult.Value == null) 
+            return;
 
         var value = objResult.Value;
-        if (value == null) return;
-
         var type = value.GetType();
-        if (!type.IsGenericType) return;
 
-        var genDef = type.GetGenericTypeDefinition();
-        if (genDef != typeof(LogiCore.Application.Common.Models.Result<>)) return;
+        // 2. Verificamos que sea nuestro Result<T> genérico
+        if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(Result<>)) 
+            return;
 
-        var isSuccessProp = type.GetProperty("IsSuccess");
-        var valueProp = type.GetProperty("Value");
-        var errorProp = type.GetProperty("Error");
+        // 3. Extraemos las propiedades clave del Result<T>
+        var isSuccess = (bool)(type.GetProperty("IsSuccess")?.GetValue(value) ?? false);
+        var innerValue = type.GetProperty("Value")?.GetValue(value);
+        var error = type.GetProperty("Error")?.GetValue(value) as string;
 
-        if (isSuccessProp == null || valueProp == null || errorProp == null) return;
-
-        var isSuccess = (bool)(isSuccessProp.GetValue(value) ?? false);
-        var innerValue = valueProp.GetValue(value);
-        var error = errorProp.GetValue(value) as string;
-
+        // --- CASO ÉXITO (200 OK / 201 Created) ---
         if (isSuccess)
         {
             if (innerValue is null)
@@ -50,37 +46,36 @@ public class ResultActionFilter : IAsyncActionFilter
                 ? StatusCodes.Status201Created
                 : StatusCodes.Status200OK;
 
-            var objectResult = new ObjectResult(value) { StatusCode = statusCode };
-
-            if (statusCode == StatusCodes.Status201Created)
-            {
-                string? idPart = null;
-                if (innerValue is Guid g) idPart = g.ToString();
-                else
-                {
-                    var idProp = innerValue.GetType().GetProperty("Id");
-                    if (idProp != null) idPart = idProp.GetValue(innerValue)?.ToString();
-                    else if (innerValue is string s) idPart = s;
-                }
-
-                if (!string.IsNullOrEmpty(idPart))
-                {
-                    var basePath = context.HttpContext.Request.Path.Value?.TrimEnd('/') ?? string.Empty;
-                    var location = $"{basePath}/{idPart}";
-                    context.HttpContext.Response.Headers["Location"] = location;
-                }
-            }
-
-            executed.Result = objectResult;
+            // Retornamos el DTO interno directamente para un JSON limpio
+            executed.Result = new ObjectResult(innerValue) { StatusCode = statusCode };
             return;
         }
 
+        // --- CASO ERROR (400 / 404 con formato unificado de ValidationProblemDetails) ---
+
+        // Creamos el diccionario de errores para que coincida con FluentValidation
+        var errorDictionary = new Dictionary<string, string[]>
+        {
+            { "Logic", new[] { error ?? "Se produjo un error en la operación de negocio." } }
+        };
+
+        var validationProblem = new ValidationProblemDetails(errorDictionary)
+        {
+            Instance = context.HttpContext.Request.Path,
+            Title = "One or more validation errors occurred.",
+            Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
+        };
+
+        // Determinamos el Status Code según el mensaje
         if (!string.IsNullOrEmpty(error) && error.Contains("not found", StringComparison.OrdinalIgnoreCase))
         {
-            executed.Result = new NotFoundObjectResult(error);
-            return;
+            validationProblem.Status = StatusCodes.Status404NotFound;
+            executed.Result = new NotFoundObjectResult(validationProblem);
         }
-
-        executed.Result = new BadRequestObjectResult(error ?? "An error occurred");
+        else
+        {
+            validationProblem.Status = StatusCodes.Status400BadRequest;
+            executed.Result = new BadRequestObjectResult(validationProblem);
+        }
     }
 }

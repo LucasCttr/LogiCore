@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using LogiCore.Domain.Entities;
 
 namespace LogiCore.Infrastructure.Persistence;
 
-public class LogiCoreDbContext : DbContext
+public class LogiCoreDbContext : IdentityDbContext<ApplicationUser>
 {
     public LogiCoreDbContext(DbContextOptions<LogiCoreDbContext> options) : base(options) { }
 

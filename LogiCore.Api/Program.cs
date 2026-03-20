@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using LogiCore.Infrastructure.Persistence;
+using LogiCore.Domain.Entities;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Infrastructure.Repositories;
 using FluentValidation;
@@ -35,6 +37,20 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCom
 // Persistence and application wiring
 builder.Services.AddDbContext<LogiCoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.User.RequireUniqueEmail = true;
+    // Configure password settings as needed
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+    .AddEntityFrameworkStores<LogiCoreDbContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
 
@@ -72,8 +88,7 @@ builder.Services.AddProblemDetails(options =>
 
 var app = builder.Build();
 
-// 2. En la parte del pipeline (después del builder.Build)
-// IMPORTANTE: Debe ir antes de MapControllers o cualquier endpoint
+// Use custom global exception handler middleware
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
