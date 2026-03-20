@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using LogiCore.Application.Common.Models;
 using LogiCore.Application.Features.Auth;
+using LogiCore.Application.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -31,7 +32,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<Result<UserDto>>> Login([FromBody] LoginUserCommand request)
+    public async Task<ActionResult<Result<AuthResponseDto>>> Login([FromBody] LoginUserCommand request)
     {
         var result = await _mediator.Send(request);
         return result;

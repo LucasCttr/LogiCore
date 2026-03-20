@@ -30,5 +30,13 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
 
         builder.Property(e => e.CreatedAt)
             .IsRequired();
+
+        builder.Property(e => e.ApplicationUserId)
+            .HasMaxLength(450);
+
+        builder.HasOne<ApplicationUser>()
+            .WithMany()
+            .HasForeignKey(e => e.ApplicationUserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

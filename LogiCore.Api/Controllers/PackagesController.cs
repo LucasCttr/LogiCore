@@ -21,7 +21,7 @@ public class PackagesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<PackageDto>>> GetByPage([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<Result<PagedResponse<PackageDto>>>> GetByPage([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetAllPackagesQuery(page, pageSize));
         return result;

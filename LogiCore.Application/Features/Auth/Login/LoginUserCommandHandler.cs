@@ -1,33 +1,44 @@
 using AutoMapper;
 using LogiCore.Application.Common.Models;
+using LogiCore.Application.DTOs;
 using LogiCore.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace LogiCore.Application.Features.Auth;
 
-public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<UserDto>>
+public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<AuthResponseDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IMapper _mapper;
+    private readonly LogiCore.Application.Common.Interfaces.Security.IJwtProvider _jwtProvider;
 
-    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper)
+    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper, LogiCore.Application.Common.Interfaces.Security.IJwtProvider jwtProvider)
     {
         _userManager = userManager;
         _mapper = mapper;
+        _jwtProvider = jwtProvider;
     }
 
-    public async Task<Result<UserDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+    public async Task<Result<AuthResponseDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
-            return Result<UserDto>.Failure("Invalid credentials");
+            return Result<AuthResponseDto>.Failure("Invalid credentials");
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!passwordValid)
-            return Result<UserDto>.Failure("Invalid credentials");
+            return Result<AuthResponseDto>.Failure("Invalid credentials");
+
+        var tokenString = _jwtProvider.CreateToken(user.Id, user.Email ?? string.Empty);
 
         var userDto = _mapper.Map<UserDto>(user);
-        return Result<UserDto>.Success(userDto);
+        var authResponse = new AuthResponseDto(tokenString, userDto);
+        return Result<AuthResponseDto>.Success(authResponse);
     }
 }

@@ -7,7 +7,7 @@ using AutoMapper;
 
 namespace LogiCore.Application.Features.Packages;
 
-public class GetAllPackagesHandler : IRequestHandler<GetAllPackagesQuery, PagedResponse<PackageDto>>
+public class GetAllPackagesHandler : IRequestHandler<GetAllPackagesQuery, Result<PagedResponse<PackageDto>>>
 {
     private readonly IPackageRepository _repository;
     private readonly IMapper _mapper;
@@ -18,12 +18,13 @@ public class GetAllPackagesHandler : IRequestHandler<GetAllPackagesQuery, PagedR
         _mapper = mapper;
     }
 
-    public async Task<PagedResponse<PackageDto>> Handle(GetAllPackagesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResponse<PackageDto>>> Handle(GetAllPackagesQuery request, CancellationToken cancellationToken)
     {
         var (items, total) = await _repository.GetPagedAsync(request.Page, request.PageSize);
 
         var dtos = _mapper.Map<IEnumerable<PackageDto>>(items);
 
-        return PagedResponse<PackageDto>.Create(dtos, total, request.Page, request.PageSize);
+        var paged = PagedResponse<PackageDto>.Create(dtos, total, request.Page, request.PageSize);
+        return Result<PagedResponse<PackageDto>>.Success(paged);
     }
 }

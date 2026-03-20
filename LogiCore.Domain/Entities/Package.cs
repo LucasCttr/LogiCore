@@ -11,7 +11,13 @@ public class Package
     public decimal Weight { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    public static Package Create(string trackingNumber, string recipientName, decimal weight)
+    // Link to the Identity user who created the package
+    public string? ApplicationUserId { get; private set; }
+
+    // Navigation property (optional)
+    public ApplicationUser? ApplicationUser { get; private set; }
+
+    public static Package Create(string trackingNumber, string recipientName, decimal weight, string? applicationUserId = null)
     {
         // Valdiations - Domain Exceptions
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
@@ -24,7 +30,8 @@ public class Package
             TrackingNumber = trackingNumber,
             RecipientName = recipientName,
             Weight = weight,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ApplicationUserId = applicationUserId
         };
     }
 
