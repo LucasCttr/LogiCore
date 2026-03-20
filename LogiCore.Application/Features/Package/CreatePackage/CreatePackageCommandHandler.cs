@@ -19,9 +19,15 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
     public async Task<Result<PackageDto>> Handle(CreatePackageCommand request, CancellationToken cancellationToken)
     {
+        // Business validation: ensure tracking number is unique
+        if (await _packageRepository.ExistsByTrackingNumberAsync(request.TrackingNumber))
+        {
+            return Result<PackageDto>.Failure("A package with the same tracking number already exists.");
+        }
+
         var package = Package.Create(request.TrackingNumber, request.RecipientName, request.Weight);
         var added = await _packageRepository.AddAsync(package);
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
-            return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));
+        return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));
     }
 }

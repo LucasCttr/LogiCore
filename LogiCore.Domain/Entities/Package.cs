@@ -1,4 +1,5 @@
 using LogiCore.Domain.Common.Exceptions;
+using System;
 
 namespace LogiCore.Domain.Entities;
 
@@ -10,11 +11,12 @@ public class Package
     public decimal Weight { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    // Factory method to create a new package with validation
     public static Package Create(string trackingNumber, string recipientName, decimal weight)
     {
-        if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero.");
-        if (string.IsNullOrWhiteSpace(trackingNumber)) throw new ArgumentException("Tracking inválido.", nameof(trackingNumber));
+        // Valdiations - Domain Exceptions
+        if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
+        if (string.IsNullOrWhiteSpace(trackingNumber)) throw new DomainException("Invalid Tracking Number.");
+        if (string.IsNullOrWhiteSpace(recipientName)) throw new DomainException("Recipient Name is required.");
 
         return new Package
         {
@@ -26,24 +28,27 @@ public class Package
         };
     }
 
-    // Methods to update fields with encapsulated validation
-    public void UpdateTrackingNumber(string trackingNumber)
-    {
-        if (string.IsNullOrWhiteSpace(trackingNumber)) throw new ArgumentException("Tracking inválido.", nameof(trackingNumber));
-        TrackingNumber = trackingNumber;
-    }
-
-    public void UpdateRecipientName(string recipientName)
-    {
-        if (string.IsNullOrWhiteSpace(recipientName)) throw new ArgumentException("Recipient name inválido.", nameof(recipientName));
-        RecipientName = recipientName;
-    }
-
     public void UpdateWeight(decimal weight)
     {
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero.");
         Weight = weight;
     }
 
-    protected Package() { }
+    public void UpdateTrackingNumber(string trackingNumber)
+    {
+        if (string.IsNullOrWhiteSpace(trackingNumber))
+            throw new DomainException("Invalid Tracking Number.");
+
+        TrackingNumber = trackingNumber;
+    }
+
+    public void UpdateRecipientName(string recipientName)
+    {
+        if (string.IsNullOrWhiteSpace(recipientName))
+            throw new DomainException("Recipient Name is required.");
+
+        RecipientName = recipientName;
+    }
+
+    protected Package() { } 
 }

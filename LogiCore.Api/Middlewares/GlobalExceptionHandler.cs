@@ -13,45 +13,29 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
     {
         logger.LogError(exception, "Unhandled error: {Message}", exception.Message);
 
-        if (httpContext.Response.HasStarted)
-        {
-            logger.LogWarning("The response has already started, the global exception handler will not modify the response.");
-            return false;
-        }
+        if (httpContext.Response.HasStarted) return false;
 
-        // determine if we are in development to include exception details
         var env = httpContext.RequestServices.GetService<Microsoft.Extensions.Hosting.IHostEnvironment>();
         var isDevelopment = env?.IsDevelopment() == true;
 
-        // Map excepcions to status codes and titles
+        // 1. Exception Mapping: Map specific exceptions to status codes and titles
         var (statusCode, title) = exception switch
         {
-            PackageWeightException => (StatusCodes.Status400BadRequest, "Invalid Package Weight"),
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
-            DomainException => (StatusCodes.Status400BadRequest, "Invalid Domain Operation"),
-            FluentValidation.ValidationException => (StatusCodes.Status400BadRequest, "Validation Failed"),
+            DomainException => (StatusCodes.Status400BadRequest, "Domain Operation Failed"),
+            FluentValidation.ValidationException => (StatusCodes.Status400BadRequest, "One or more validation errors occurred."), 
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
 
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/problem+json";
 
-        // Build ProblemDetails (or ValidationProblemDetails)
+        // 2. Special handling for FluentValidation exceptions to return a ValidationProblemDetails response
         if (exception is FluentValidation.ValidationException valEx)
         {
-            var errors = new Dictionary<string, string[]>();
-            foreach (var failure in valEx.Errors)
-            {
-                if (!errors.TryGetValue(failure.PropertyName, out var list))
-                {
-                    errors[failure.PropertyName] = new[] { failure.ErrorMessage };
-                }
-                else
-                {
-                    var merged = list.Concat(new[] { failure.ErrorMessage }).ToArray();
-                    errors[failure.PropertyName] = merged;
-                }
-            }
+            var errors = valEx.Errors
+                .GroupBy(x => x.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray());
 
             var validationProblem = new ValidationProblemDetails(errors)
             {
@@ -65,7 +49,7 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             return true;
         }
 
-        // Keep `detail` concise; in Development include inner exceptions separately in extensions
+        // 3. Caso General: Errores no esperados o de Dominio
         var detail = isDevelopment ? exception.Message : "An error occurred while processing the request.";
 
         var problemDetails = new ProblemDetails
@@ -77,27 +61,16 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         };
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
-        // In Development include the full exception (stack trace) and inner exception messages in extensions to aid debugging
         if (isDevelopment)
         {
             problemDetails.Extensions["exception"] = exception.ToString();
-
-            var innerMessages = new System.Collections.Generic.List<string>();
-            var inner = exception.InnerException;
-            while (inner != null)
-            {
-                innerMessages.Add(inner.Message);
-                inner = inner.InnerException;
-            }
-
-            if (innerMessages.Count > 0)
-            {
-                problemDetails.Extensions["innerExceptions"] = innerMessages.ToArray();
-            }
+            // Podés simplificar el bucle de InnerExceptions con una lista
+            var inners = new List<string>();
+            for (var i = exception.InnerException; i != null; i = i.InnerException) inners.Add(i.Message);
+            if (inners.Count > 0) problemDetails.Extensions["innerExceptions"] = inners;
         }
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-
         return true; 
     }
 }

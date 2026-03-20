@@ -28,7 +28,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         // 3. Check if creation was successful
         if (!result.Succeeded)
         {
-            var error = result.Errors.FirstOrDefault()?.Description ?? "Error en el registro";
+            var error = result.Errors.FirstOrDefault()?.Description ?? "Error creating user";
             return Result<UserDto>.Failure(error);
         }
 

@@ -17,65 +17,40 @@ public class ResultActionFilter : IAsyncActionFilter
     {
         var executed = await next();
 
-        // 1. Solo interceptamos si el resultado es un ObjectResult
-        if (executed.Result is not ObjectResult objResult || objResult.Value == null) 
-            return;
-
-        var value = objResult.Value;
-        var type = value.GetType();
-
-        // 2. Verificamos que sea nuestro Result<T> genérico
-        if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(Result<>)) 
-            return;
-
-        // 3. Extraemos las propiedades clave del Result<T>
-        var isSuccess = (bool)(type.GetProperty("IsSuccess")?.GetValue(value) ?? false);
-        var innerValue = type.GetProperty("Value")?.GetValue(value);
-        var error = type.GetProperty("Error")?.GetValue(value) as string;
-
-        // --- CASO ÉXITO (200 OK / 201 Created) ---
-        if (isSuccess)
+        // 1. Check if the action result is an ObjectResult containing a Result<T>
+        if (executed.Result is ObjectResult objResult && objResult.Value is Application.Common.Models.IResult result)
         {
-            if (innerValue is null)
+            // --- SUCCESS CASE ---
+            if (result.IsSuccess)
             {
-                executed.Result = new NoContentResult();
-                return;
+                var content = result.GetValue();
+                if (content is null) { executed.Result = new NoContentResult(); return; }
+
+                var statusCode = context.HttpContext.Request.Method == HttpMethods.Post
+                    ? StatusCodes.Status201Created
+                    : StatusCodes.Status200OK;
+
+                executed.Result = new ObjectResult(content) { StatusCode = statusCode };
             }
+            // --- ERROR CASE ---
+            else
+            {
+                var errorDictionary = new Dictionary<string, string[]>
+                {
+                    { "Logic", new[] { result.Error ?? "Business error occurred." } }
+                };
 
-            var statusCode = context.HttpContext.Request.Method == HttpMethods.Post
-                ? StatusCodes.Status201Created
-                : StatusCodes.Status200OK;
+                var validationProblem = new ValidationProblemDetails(errorDictionary)
+                {
+                    Instance = context.HttpContext.Request.Path,
+                    Title = "One or more validation errors occurred.",
+                    Status = result.Error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true 
+                        ? StatusCodes.Status404NotFound 
+                        : StatusCodes.Status400BadRequest
+                };
 
-            // Retornamos el DTO interno directamente para un JSON limpio
-            executed.Result = new ObjectResult(innerValue) { StatusCode = statusCode };
-            return;
-        }
-
-        // --- CASO ERROR (400 / 404 con formato unificado de ValidationProblemDetails) ---
-
-        // Creamos el diccionario de errores para que coincida con FluentValidation
-        var errorDictionary = new Dictionary<string, string[]>
-        {
-            { "Logic", new[] { error ?? "Se produjo un error en la operación de negocio." } }
-        };
-
-        var validationProblem = new ValidationProblemDetails(errorDictionary)
-        {
-            Instance = context.HttpContext.Request.Path,
-            Title = "One or more validation errors occurred.",
-            Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
-        };
-
-        // Determinamos el Status Code según el mensaje
-        if (!string.IsNullOrEmpty(error) && error.Contains("not found", StringComparison.OrdinalIgnoreCase))
-        {
-            validationProblem.Status = StatusCodes.Status404NotFound;
-            executed.Result = new NotFoundObjectResult(validationProblem);
-        }
-        else
-        {
-            validationProblem.Status = StatusCodes.Status400BadRequest;
-            executed.Result = new BadRequestObjectResult(validationProblem);
+                executed.Result = new ObjectResult(validationProblem) { StatusCode = validationProblem.Status };
+            }
         }
     }
 }

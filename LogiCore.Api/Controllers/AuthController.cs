@@ -29,4 +29,11 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(request);
         return result;
     }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<Result<UserDto>>> Login([FromBody] LoginUserCommand request)
+    {
+        var result = await _mediator.Send(request);
+        return result;
+    }
 }

@@ -17,6 +17,13 @@ public class SqlPackageRepository : IPackageRepository
         return entry.Entity;
     }
 
+    public async Task<bool> ExistsByTrackingNumberAsync(string trackingNumber)
+    {
+        return await _context.Packages
+            .AsNoTracking()
+            .AnyAsync(p => p.TrackingNumber == trackingNumber);
+    }
+
     public async Task<IEnumerable<Package>> GetAllAsync()
     {
         return await _context.Packages.AsNoTracking().ToListAsync();
