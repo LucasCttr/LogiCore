@@ -2,6 +2,9 @@ using LogiCore.Domain.Common.Exceptions;
 using LogiCore.Domain.Entities.States;
 using System;
 using LogiCore.Domain.ValueObjects;
+using System.Collections.Generic;
+using LogiCore.Domain.Common;
+using LogiCore.Domain.Common.Events;
 
 namespace LogiCore.Domain.Entities;
 
@@ -40,6 +43,13 @@ public class Package
         };
     }
 
+    private readonly List<IDomainEvent> _domainEvents = new();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+    public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+
+    public void ClearDomainEvents() => _domainEvents.Clear();
+
     public void UpdateWeight(decimal weight)
     {
         GetState().EnsureCanUpdateWeight(this, weight);
@@ -69,7 +79,18 @@ public class Package
 
     internal void SetStatus(PackageStatus status)
     {
+        if (Status == status) return;
+
+        var old = Status;
         Status = status;
+
+        AddDomainEvent(new PackageStatusChangedEvent
+        {
+            PackageId = this.Id,
+            OldStatus = old,
+            NewStatus = status,
+            OccurredOn = DateTime.UtcNow
+        });
     }
 
     private IPackageState GetState()

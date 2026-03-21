@@ -9,6 +9,7 @@ public class LogiCoreDbContext : IdentityDbContext<ApplicationUser>
     public LogiCoreDbContext(DbContextOptions<LogiCoreDbContext> options) : base(options) { }
 
     public DbSet<Package> Packages => Set<Package>();
+    public DbSet<PackageStatusHistory> PackageStatusHistories => Set<PackageStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
