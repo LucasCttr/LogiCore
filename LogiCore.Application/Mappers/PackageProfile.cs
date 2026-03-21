@@ -8,6 +8,8 @@ public class PackageProfile : Profile
 {
     public PackageProfile()
     {
-        CreateMap<Package, PackageDto>();
+        CreateMap<Domain.Entities.Package, PackageDto>()
+            .ForMember(dest => dest.Recipient, opt => opt.MapFrom(src => src.Recipient));
+        CreateMap<Domain.ValueObjects.Recipient, RecipientDto>();
     }
 }

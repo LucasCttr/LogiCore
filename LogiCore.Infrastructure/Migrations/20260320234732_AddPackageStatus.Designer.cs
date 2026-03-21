@@ -4,6 +4,7 @@ using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260320234732_AddPackageStatus")]
+    partial class AddPackageStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,8 +111,16 @@ namespace LogiCore.Infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ApplicationUserId1")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -125,6 +136,8 @@ namespace LogiCore.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("ApplicationUserId1");
 
                     b.HasIndex("TrackingNumber")
                         .IsUnique();
@@ -267,44 +280,16 @@ namespace LogiCore.Infrastructure.Migrations
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Package", b =>
                 {
-                    b.HasOne("LogiCore.Domain.Entities.ApplicationUser", "ApplicationUser")
-                        .WithMany("Packages")
+                    b.HasOne("LogiCore.Domain.Entities.ApplicationUser", null)
+                        .WithMany()
                         .HasForeignKey("ApplicationUserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.OwnsOne("LogiCore.Domain.ValueObjects.Recipient", "Recipient", b1 =>
-                        {
-                            b1.Property<Guid>("PackageId")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<string>("Address")
-                                .HasMaxLength(500)
-                                .HasColumnType("nvarchar(500)")
-                                .HasColumnName("RecipientAddress");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasMaxLength(200)
-                                .HasColumnType("nvarchar(200)")
-                                .HasColumnName("RecipientName");
-
-                            b1.Property<string>("Phone")
-                                .HasMaxLength(50)
-                                .HasColumnType("nvarchar(50)")
-                                .HasColumnName("RecipientPhone");
-
-                            b1.HasKey("PackageId");
-
-                            b1.ToTable("Packages");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PackageId");
-                        });
+                    b.HasOne("LogiCore.Domain.Entities.ApplicationUser", "ApplicationUser")
+                        .WithMany("Packages")
+                        .HasForeignKey("ApplicationUserId1");
 
                     b.Navigation("ApplicationUser");
-
-                    b.Navigation("Recipient")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

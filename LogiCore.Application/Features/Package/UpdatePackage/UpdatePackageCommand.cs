@@ -13,6 +13,8 @@ namespace LogiCore.Application.Features.Packages
         public Guid Id { get; init; }
         public string? TrackingNumber { get; init; }
         public string? RecipientName { get; init; }
+        public string? RecipientAddress { get; init; }
+        public string? RecipientPhone { get; init; }
         public decimal? Weight { get; init; }
     }
 }

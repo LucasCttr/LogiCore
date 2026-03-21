@@ -35,7 +35,10 @@ namespace LogiCore.Application.Features.Packages
                 existingPackage.UpdateTrackingNumber(request.TrackingNumber);
 
             if (!string.IsNullOrEmpty(request.RecipientName))
-                existingPackage.UpdateRecipientName(request.RecipientName);
+            {
+                var recipient = LogiCore.Domain.ValueObjects.Recipient.Create(request.RecipientName, request.RecipientAddress, request.RecipientPhone);
+                existingPackage.UpdateRecipient(recipient);
+            }
 
             if (request.Weight.HasValue)
                 existingPackage.UpdateWeight(request.Weight.Value);
