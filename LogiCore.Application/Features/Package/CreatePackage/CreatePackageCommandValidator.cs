@@ -16,5 +16,14 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
 
         RuleFor(x => x.Weight)
             .GreaterThan(0).WithMessage("Weight must be greater than zero.");
+
+        RuleFor(x => x.LengthCm)
+            .GreaterThan(0).WithMessage("Length must be greater than zero.");
+
+        RuleFor(x => x.WidthCm)
+            .GreaterThan(0).WithMessage("Width must be greater than zero.");
+
+        RuleFor(x => x.HeightCm)
+            .GreaterThan(0).WithMessage("Height must be greater than zero.");
     }
 }

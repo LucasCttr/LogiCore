@@ -24,4 +24,7 @@ internal abstract class PackageState : IPackageState
 
     public virtual void EnsureCanUpdateRecipientName(Package package, string recipientName)
         => throw new DomainException($"Cannot update recipient name in state {Status}.");
+
+    public virtual void EnsureCanUpdateDimensions(Package package)
+        => throw new DomainException($"Cannot update dimensions in state {Status}.");
 }

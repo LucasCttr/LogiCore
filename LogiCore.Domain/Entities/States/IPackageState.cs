@@ -11,4 +11,5 @@ internal interface IPackageState
     void EnsureCanUpdateWeight(Package package, decimal weight);
     void EnsureCanUpdateTrackingNumber(Package package, string trackingNumber);
     void EnsureCanUpdateRecipientName(Package package, string recipientName);
+    void EnsureCanUpdateDimensions(Package package);
 }

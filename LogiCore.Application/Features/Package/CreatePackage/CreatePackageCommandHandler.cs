@@ -33,7 +33,8 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
             return Result<PackageDto>.Failure("Unauthorized");
 
         var recipient = LogiCore.Domain.ValueObjects.Recipient.Create(request.RecipientName, request.RecipientAddress, request.RecipientPhone);
-        var package = Package.Create(request.TrackingNumber, recipient, request.Weight, userId);
+        var dims = LogiCore.Domain.ValueObjects.Dimensions.Create(request.LengthCm, request.WidthCm, request.HeightCm);
+        var package = Package.Create(request.TrackingNumber, recipient, request.Weight, userId, dims);
         var added = await _packageRepository.AddAsync(package);
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
         return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));

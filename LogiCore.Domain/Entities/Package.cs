@@ -24,7 +24,7 @@ public class Package : IHasDomainEvents
     // Navigation property (optional)
     public ApplicationUser? ApplicationUser { get; private set; }
 
-    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string? applicationUserId)
+    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string? applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions)
     {
         // Valdiations - Domain Exceptions
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
@@ -42,6 +42,7 @@ public class Package : IHasDomainEvents
             Status = PackageStatus.Pending
         };
 
+        package._dimensions = dimensions;
         package.SyncState(package.Status);
 
         return package;
@@ -55,6 +56,9 @@ public class Package : IHasDomainEvents
     public void ClearDomainEvents() => _domainEvents.Clear();
 
     private IPackageState? _state;
+    private LogiCore.Domain.ValueObjects.Dimensions? _dimensions;
+
+    public LogiCore.Domain.ValueObjects.Dimensions? Dimensions => _dimensions;
 
     public void UpdateWeight(decimal weight)
     {
@@ -81,6 +85,13 @@ public class Package : IHasDomainEvents
         if (recipient is null) throw new DomainException("Recipient is required.");
 
         Recipient = recipient;
+    }
+
+    public void UpdateDimensions(LogiCore.Domain.ValueObjects.Dimensions dimensions)
+    {
+        GetState().EnsureCanUpdateDimensions(this);
+        if (dimensions is null) throw new DomainException("Dimensions are required.");
+        _dimensions = dimensions;
     }
 
     internal void SetStatus(PackageStatus status)

@@ -7,4 +7,28 @@ internal class PendingState : PackageState
 {
     public override PackageStatus Status => PackageStatus.Pending;
 
+    // --- ALLOWED ACTIONS ---
+
+    public override void StartTransit(Package package) 
+        => package.SetStatus(PackageStatus.InTransit);
+
+    public override void Cancel(Package package) 
+        => package.SetStatus(PackageStatus.Canceled);
+
+    // --- PERMISSIONS FOR EDITING (Empty Overrides) ---
+
+    public override void EnsureCanUpdateDimensions(Package package) 
+    { 
+        // OK: Allows setting dimensions when creating the package
+    }
+
+    public override void EnsureCanUpdateWeight(Package package, decimal weight)
+    {
+        // OK:  Allows setting weight when creating the package
+    }
+
+    public override void EnsureCanUpdateRecipientName(Package package, string name)
+    {
+        // OK:  Allows setting recipient name when creating the package
+    }
 }
