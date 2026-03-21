@@ -8,7 +8,7 @@ using LogiCore.Domain.Common.Events;
 
 namespace LogiCore.Domain.Entities;
 
-public class Package
+public class Package : IHasDomainEvents
 {
     public Guid Id { get; private set; }
     public string TrackingNumber { get; private set; } = null!;
@@ -31,7 +31,7 @@ public class Package
         if (string.IsNullOrWhiteSpace(trackingNumber)) throw new DomainException("Invalid Tracking Number.");
         if (recipient is null) throw new DomainException("Recipient is required.");
 
-        return new Package
+        var package = new Package
         {
             Id = Guid.NewGuid(),
             TrackingNumber = trackingNumber,
@@ -41,6 +41,10 @@ public class Package
             ApplicationUserId = applicationUserId,
             Status = PackageStatus.Pending
         };
+
+        package.SyncState(package.Status);
+
+        return package;
     }
 
     private readonly List<IDomainEvent> _domainEvents = new();
@@ -49,6 +53,8 @@ public class Package
     public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
 
     public void ClearDomainEvents() => _domainEvents.Clear();
+
+    private IPackageState? _state;
 
     public void UpdateWeight(decimal weight)
     {
@@ -91,16 +97,35 @@ public class Package
             NewStatus = status,
             OccurredOn = DateTime.UtcNow
         });
+
+        SyncState(status);
     }
 
     private IPackageState GetState()
     {
-        return Status switch
+        if (_state is null)
         {
-            PackageStatus.Pending => new States.PendingState(),
-            PackageStatus.InTransit => new States.InTransitState(),
-            PackageStatus.Delivered => new States.DeliveredState(),
-            PackageStatus.Canceled => new States.CanceledState(),
+            _state = Status switch
+            {
+                PackageStatus.Pending => new States.PendingState(),
+                PackageStatus.InTransit => new States.InTransitState(),
+                PackageStatus.Delivered => new States.DeliveredState(),
+                PackageStatus.Canceled => new States.CanceledState(),
+                _ => throw new DomainException("Unknown package status")
+            };
+        }
+
+        return _state;
+    }
+
+    private void SyncState(PackageStatus newStatus)
+    {
+        _state = newStatus switch
+        {
+            PackageStatus.Pending => new PendingState(),
+            PackageStatus.InTransit => new InTransitState(),
+            PackageStatus.Delivered => new DeliveredState(),
+            PackageStatus.Canceled => new CanceledState(),
             _ => throw new DomainException("Unknown package status")
         };
     }

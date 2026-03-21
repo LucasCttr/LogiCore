@@ -55,7 +55,7 @@ public class PackagesController : ControllerBase
 
     // POST: api/packages/{id}/ship
     [HttpPost("{id:guid}/ship")]
-    public async Task<Result<Unit>> Ship(Guid id)
+        public async Task<ActionResult<Result<PackageDto>>> Ship(Guid id)
     {
         var result = await _mediator.Send(new ShipPackageCommand(id));
         return result;
@@ -63,7 +63,7 @@ public class PackagesController : ControllerBase
 
     // POST: api/packages/{id}/deliver
     [HttpPost("{id:guid}/deliver")]
-    public async Task<Result<Unit>> Deliver(Guid id)
+        public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
     {
         var result = await _mediator.Send(new DeliverPackageCommand(id));
         return result;
@@ -71,7 +71,7 @@ public class PackagesController : ControllerBase
 
     // POST: api/packages/{id}/cancel
     [HttpPost("{id:guid}/cancel")]
-    public async Task<Result<Unit>> Cancel(Guid id)
+        public async Task<ActionResult<Result<PackageDto>>> Cancel(Guid id)
     {
         var result = await _mediator.Send(new CancelPackageCommand(id));
         return result;

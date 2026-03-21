@@ -1,6 +1,7 @@
 using LogiCore.Application.Common.Models;
+using LogiCore.Application.DTOs;
 using MediatR;
 
 namespace LogiCore.Application.Features.Packages;
 
-public record DeliverPackageCommand(Guid Id) : IRequest<Result<Unit>>;
+public record DeliverPackageCommand(Guid PackageId) : IRequest<Result<PackageDto>>;
