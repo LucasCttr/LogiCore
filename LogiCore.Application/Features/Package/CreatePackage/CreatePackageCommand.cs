@@ -7,7 +7,7 @@ public class CreatePackageCommand : IRequest<Result<PackageDto>>
 {
     public required string TrackingNumber { get; init; }
     public required string RecipientName { get; init; }
-    public string? RecipientAddress { get; init; }
-    public string? RecipientPhone { get; init; }
-    public decimal Weight { get; init; }
+    public required string RecipientAddress { get; init; }
+    public required string RecipientPhone { get; init; }
+    public required decimal Weight { get; init; }
 }
