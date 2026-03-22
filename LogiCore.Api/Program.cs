@@ -15,7 +15,7 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Logging ---
+// --- Logging ---
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -24,7 +24,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-// --- 2. Servicios Base ---
+// --- Controllers ---
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<LogiCore.Api.Filters.ResultActionFilter>();
@@ -33,14 +33,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCommandHandler).Assembly);
 
-// --- 3. Persistencia ---
+// --- Persistence ---
 builder.Services.AddDbContext<LogiCoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// --- 4. Identity & Seguridad ---
+// Infrastructure services
+builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.INotificationService, LogiCore.Infrastructure.Services.ConsoleNotificationService>();
+builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.IEmailService, LogiCore.Infrastructure.Services.SmtpEmailService>();
+
+// --- Identity and Authentication ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.User.RequireUniqueEmail = true;
@@ -88,15 +92,15 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageCommandValidat
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestValidationBehavior<,>));
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(SaveChangesBehavior<,>));
 
-// --- 6. Manejo de Excepciones Global ---
+// --- Global Exception Handling ---
 builder.Services.AddExceptionHandler<LogiCore.Api.Middlewares.GlobalExceptionHandler>();
-builder.Services.AddProblemDetails(); // Registro base sin personalizaciones extras
+builder.Services.AddProblemDetails(); 
 
 var app = builder.Build();
 
-// --- 7. Pipeline de Middlewares ---
+// --- Middlewares Pipeline  ---
 
-// IMPORTANTE: El ExceptionHandler debe ir lo más arriba posible
+
 app.UseExceptionHandler(); 
 
 if (app.Environment.IsDevelopment())
