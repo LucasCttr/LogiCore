@@ -57,6 +57,7 @@ public class Package : IHasDomainEvents
 
     private IPackageState? _state;
     private LogiCore.Domain.ValueObjects.Dimensions? _dimensions;
+    private LogiCore.Domain.ValueObjects.Money? _estimatedCost;
 
     public LogiCore.Domain.ValueObjects.Dimensions? Dimensions => _dimensions;
 
@@ -92,6 +93,19 @@ public class Package : IHasDomainEvents
         GetState().EnsureCanUpdateDimensions(this);
         if (dimensions is null) throw new DomainException("Dimensions are required.");
         _dimensions = dimensions;
+    }
+
+    public LogiCore.Domain.ValueObjects.Money? EstimatedCost => _estimatedCost;
+
+    public void ApplyShippingCost(LogiCore.Domain.Common.Interfaces.ICostCalculator calculator)
+    {
+        if (calculator is null) throw new DomainException("Cost calculator is required.");
+
+        // Ensure package is in a state that allows recalculation (reuse existing state checks)
+        GetState().EnsureCanUpdateWeight(this, this.Weight);
+
+        var cost = calculator.CalculateCost(this);
+        _estimatedCost = new LogiCore.Domain.ValueObjects.Money(cost.Amount, cost.Currency);
     }
 
     internal void SetStatus(PackageStatus status)

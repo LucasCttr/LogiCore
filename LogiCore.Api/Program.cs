@@ -43,6 +43,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Infrastructure services
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.INotificationService, LogiCore.Infrastructure.Services.ConsoleNotificationService>();
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.IEmailService, LogiCore.Infrastructure.Services.SmtpEmailService>();
+builder.Services.AddTransient<LogiCore.Domain.Common.Interfaces.ICostCalculator, LogiCore.Infrastructure.Services.StandardCostCalculator>();
 
 // --- Identity and Authentication ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

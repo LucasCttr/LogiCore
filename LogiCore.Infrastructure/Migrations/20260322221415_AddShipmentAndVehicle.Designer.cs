@@ -4,6 +4,7 @@ using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322221415_AddShipmentAndVehicle")]
+    partial class AddShipmentAndVehicle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -301,42 +304,16 @@ namespace LogiCore.Infrastructure.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<decimal>("HeightCm")
-                                .HasPrecision(18, 2)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("HeightCm");
 
                             b1.Property<decimal>("LengthCm")
-                                .HasPrecision(18, 2)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("LengthCm");
 
                             b1.Property<decimal>("WidthCm")
-                                .HasPrecision(18, 2)
                                 .HasColumnType("decimal(18,2)")
                                 .HasColumnName("WidthCm");
-
-                            b1.HasKey("PackageId");
-
-                            b1.ToTable("Packages");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PackageId");
-                        });
-
-                    b.OwnsOne("LogiCore.Domain.ValueObjects.Money", "_estimatedCost", b1 =>
-                        {
-                            b1.Property<Guid>("PackageId")
-                                .HasColumnType("uniqueidentifier");
-
-                            b1.Property<decimal>("Amount")
-                                .HasPrecision(18, 2)
-                                .HasColumnType("decimal(18,2)")
-                                .HasColumnName("EstimatedCostAmount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)")
-                                .HasColumnName("EstimatedCostCurrency");
 
                             b1.HasKey("PackageId");
 
@@ -381,8 +358,6 @@ namespace LogiCore.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("_dimensions");
-
-                    b.Navigation("_estimatedCost");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
