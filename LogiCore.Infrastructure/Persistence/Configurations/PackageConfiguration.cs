@@ -3,6 +3,8 @@ using LogiCore.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+namespace LogiCore.Infrastructure.Persistence.Configurations;
+
 public class PackageConfiguration : IEntityTypeConfiguration<Package>
 {
     public void Configure(EntityTypeBuilder<Package> builder)
@@ -27,6 +29,14 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             r.Property(x => x.Phone).HasColumnName("RecipientPhone").HasMaxLength(50);
         });
 
+        // Map Dimensions as owned value object stored in Package table (backing field _dimensions)
+        builder.OwnsOne(typeof(LogiCore.Domain.ValueObjects.Dimensions), "_dimensions", owned =>
+        {
+            owned.Property<decimal>("LengthCm").HasColumnName("LengthCm").HasPrecision(18,2);
+            owned.Property<decimal>("WidthCm").HasColumnName("WidthCm").HasPrecision(18,2);
+            owned.Property<decimal>("HeightCm").HasColumnName("HeightCm").HasPrecision(18,2);
+        });
+
         builder.Property(e => e.Weight)
             .HasColumnType("decimal(10,2)") 
             .IsRequired();
@@ -45,5 +55,12 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             .WithMany(u => u.Packages)
             .HasForeignKey(p => p.ApplicationUserId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Map Money (EstimatedCost) as an owned value object stored in Package table (backing field _estimatedCost)
+        builder.OwnsOne(typeof(LogiCore.Domain.ValueObjects.Money), "_estimatedCost", owned =>
+        {
+            owned.Property<decimal>("Amount").HasColumnName("EstimatedCostAmount").HasPrecision(18,2);
+            owned.Property<string>("Currency").HasColumnName("EstimatedCostCurrency");
+        });
     }
 }

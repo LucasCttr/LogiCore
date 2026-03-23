@@ -2,6 +2,7 @@ using MediatR;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using LogiCore.Application.DTOs;
+using LogiCore.Application.Features.Package.GetPackageLocation;
 using LogiCore.Application.Common.Models;
 using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
@@ -74,6 +75,14 @@ public class PackagesController : ControllerBase
         public async Task<ActionResult<Result<PackageDto>>> Cancel(Guid id)
     {
         var result = await _mediator.Send(new CancelPackageCommand(id));
+        return result;
+    }
+
+    // GET: api/packages/{id}/location
+    [HttpGet("{id:guid}/location")]
+    public async Task<ActionResult<Result<ShipmentDto?>>> GetLocation(Guid id)
+    {
+        var result = await _mediator.Send(new GetPackageLocationQuery(id));
         return result;
     }
 }

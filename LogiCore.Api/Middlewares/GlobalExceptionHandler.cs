@@ -18,9 +18,16 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         // Mapping Exceptions to Status Codes and Titles
         var (statusCode, title) = exception switch
         {
+            // 404: Cuando el ID del paquete o envío no existe en la DB
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
-            DomainException => (StatusCodes.Status400BadRequest, "Domain Operation Failed"),
-            FluentValidation.ValidationException => (StatusCodes.Status400BadRequest, "Validation Error"), 
+
+            // 400: Cuando el camión está lleno o el estado es inválido (Reglas de LogiCore)
+            DomainException => (StatusCodes.Status400BadRequest, "Business Rule Violation"),
+
+            // 422: Cuando el JSON tiene errores (ej: TrackingNumber vacío o Peso < 0)
+            FluentValidation.ValidationException => (StatusCodes.Status422UnprocessableEntity, "Validation Error"),
+
+            // 500: Errores no controlados (explosión de base de datos, nulos inesperados, etc.)
             _ => (StatusCodes.Status500InternalServerError, "Internal Server Error")
         };
 
@@ -66,21 +73,21 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
             Detail = detail,
             Instance = httpContext.Request.Path
         };
-        
+
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
 
         if (isDevelopment)
         {
             // Extra details for development environment
             var inners = new List<string>();
-            for (var i = exception.InnerException; i != null; i = i.InnerException) 
+            for (var i = exception.InnerException; i != null; i = i.InnerException)
                 inners.Add(i.Message);
-                
-            if (inners.Count > 0) 
+
+            if (inners.Count > 0)
                 problemDetails.Extensions["innerExceptions"] = inners;
         }
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
-        return true; 
+        return true;
     }
 }

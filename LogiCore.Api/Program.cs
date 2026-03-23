@@ -38,6 +38,8 @@ builder.Services.AddDbContext<LogiCoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
+builder.Services.AddScoped<IShipmentRepository, SqlShipmentRepository>();
+builder.Services.AddScoped<IVehicleRepository, SqlVehicleRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Infrastructure services
