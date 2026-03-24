@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using LogiCore.Application.Features.Shipment.CreateShipment;
+using LogiCore.Application.Features.Shipment.GetById;
+using LogiCore.Application.Features.Shipment.GetAll;
 using LogiCore.Application.Features.Shipment.AddPackageToShipment;
 using LogiCore.Application.Features.Shipment.DispatchShipment;
 using LogiCore.Application.Common.Models;
@@ -24,6 +26,22 @@ public class ShipmentsController : ControllerBase
     public async Task<ActionResult<Result<ShipmentDto>>> Create([FromBody] CreateShipmentCommand request)
     {
         var result = await _mediator.Send(request);
+        return result;
+    }
+
+    // GET: api/shipments
+    [HttpGet]
+    public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetAll()
+    {
+        var result = await _mediator.Send(new GetAllShipmentsQuery());
+        return result;
+    }
+
+    // GET: api/shipments/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<Result<ShipmentDto>>> GetById(Guid id)
+    {
+        var result = await _mediator.Send(new GetShipmentByIdQuery(id));
         return result;
     }
 

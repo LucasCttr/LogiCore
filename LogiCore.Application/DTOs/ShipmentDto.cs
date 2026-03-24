@@ -3,4 +3,13 @@ using System.Collections.Generic;
 
 namespace LogiCore.Application.DTOs;
 
-public record ShipmentDto(Guid Id, string RouteCode, Guid VehicleId, decimal VehicleMaxWeightCapacity, decimal VehicleMaxVolumeCapacity, IEnumerable<Guid> PackageIds, ShipmentStatus Status);
+public class ShipmentDto
+{
+	public Guid Id { get; set; }
+	public string RouteCode { get; set; } = null!;
+	public Guid VehicleId { get; set; }
+	public decimal VehicleMaxWeightCapacity { get; set; }
+	public decimal VehicleMaxVolumeCapacity { get; set; }
+	public IEnumerable<Guid> PackageIds { get; set; } = Enumerable.Empty<Guid>();
+	public ShipmentStatus Status { get; set; }
+}
