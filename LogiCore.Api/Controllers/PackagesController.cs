@@ -2,7 +2,7 @@ using MediatR;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using LogiCore.Application.DTOs;
-using LogiCore.Application.Features.Package.GetPackageLocation;
+using LogiCore.Application.Features.Package.GetPackagePublicHistory;
 using LogiCore.Application.Common.Models;
 using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
@@ -83,7 +83,7 @@ public class PackagesController : ControllerBase
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public async Task<ActionResult<Result<PackagePublicHistoryDto?>>> GetByTracking(string trackingNumber)
     {
-        var result = await _mediator.Send(new GetPackageLocationByTrackingQuery(trackingNumber));
+        var result = await _mediator.Send(new GetPackagePublicHistoryQuery(trackingNumber));
         return result;
     }
 

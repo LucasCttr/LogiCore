@@ -3,20 +3,20 @@ using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
 using LogiCore.Application.Common.Interfaces.Persistence;
 
-namespace LogiCore.Application.Features.Package.GetPackageLocation;
+namespace LogiCore.Application.Features.Package.GetPackagePublicHistory;
 
-public class GetPackageLocationByTrackingHandler : IRequestHandler<GetPackageLocationByTrackingQuery, Result<PackagePublicHistoryDto?>>
+public class GetPackagePublicHistoryHandler : IRequestHandler<GetPackagePublicHistoryQuery, Result<PackagePublicHistoryDto?>>
 {
     private readonly IPackageRepository _packageRepository;
     private readonly IShipmentRepository _shipmentRepository;
 
-    public GetPackageLocationByTrackingHandler(IPackageRepository packageRepository, IShipmentRepository shipmentRepository)
+    public GetPackagePublicHistoryHandler(IPackageRepository packageRepository, IShipmentRepository shipmentRepository)
     {
         _packageRepository = packageRepository;
         _shipmentRepository = shipmentRepository;
     }
 
-    public async Task<Result<PackagePublicHistoryDto?>> Handle(GetPackageLocationByTrackingQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PackagePublicHistoryDto?>> Handle(GetPackagePublicHistoryQuery request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.TrackingNumber))
             return Result<PackagePublicHistoryDto?>.Failure("Tracking number is required.");

@@ -2,10 +2,10 @@ using MediatR;
 using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
 
-namespace LogiCore.Application.Features.Package.GetPackageLocation;
+namespace LogiCore.Application.Features.Package.GetPackagePublicHistory;
 
-public class GetPackageLocationByTrackingQuery : IRequest<Result<PackagePublicHistoryDto?>>
+public class GetPackagePublicHistoryQuery : IRequest<Result<PackagePublicHistoryDto?>>
 {
     public string TrackingNumber { get; init; }
-    public GetPackageLocationByTrackingQuery(string trackingNumber) => TrackingNumber = trackingNumber;
+    public GetPackagePublicHistoryQuery(string trackingNumber) => TrackingNumber = trackingNumber;
 }
