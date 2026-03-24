@@ -7,6 +7,7 @@ using MediatR;
 
 namespace LogiCore.Application.Features.Packages;
 
+[System.Obsolete("ShipPackageCommandHandler is deprecated. Use Shipment-based flow: add package to shipment and dispatch the shipment.")]
 public class ShipPackageCommandHandler : IRequestHandler<ShipPackageCommand, Result<PackageDto>>
 {
     private readonly IUnitOfWork _unitOfWork;

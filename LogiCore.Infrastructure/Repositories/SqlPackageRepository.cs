@@ -48,6 +48,9 @@ public class SqlPackageRepository : IPackageRepository
     public async Task<Package?> GetByIdAsync(Guid id) =>
         await _context.Packages.FindAsync(id);
 
+    public async Task<Package?> GetByTrackingNumberAsync(string trackingNumber) =>
+        await _context.Packages.AsNoTracking().FirstOrDefaultAsync(p => p.TrackingNumber == trackingNumber);
+
     public Task<Package> UpdateAsync(Package package)
     {
         var entry = _context.Packages.Update(package);

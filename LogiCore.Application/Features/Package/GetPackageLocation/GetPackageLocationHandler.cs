@@ -29,7 +29,7 @@ public class GetPackageLocationHandler : IRequestHandler<GetPackageLocationQuery
             return Result<ShipmentDto?>.Failure("Package not found.");
 
         var userId = _currentUserService.UserId;
-        if (string.IsNullOrEmpty(userId) || package.ApplicationUserId != userId)
+        if (string.IsNullOrEmpty(userId))
             return Result<ShipmentDto?>.Failure("Unauthorized");
 
         var shipment = await _shipmentRepository.GetByPackageIdAsync(request.PackageId);

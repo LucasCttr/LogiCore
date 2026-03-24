@@ -31,6 +31,7 @@ public class PackagesController : ControllerBase
 
     // GET: api/packages/{id}
     [HttpGet("{id:guid}")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<ActionResult<Result<PackageDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetPackageByIdQuery(id));
@@ -39,6 +40,7 @@ public class PackagesController : ControllerBase
 
     // POST: api/packages
     [HttpPost]
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<ActionResult<Result<PackageDto>>> Create([FromBody] CreatePackageCommand request)
     {
         var result = await _mediator.Send(request);
@@ -47,6 +49,7 @@ public class PackagesController : ControllerBase
 
     // PUT: api/packages/{id}
     [HttpPut("{id:guid}")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<ActionResult<Result<PackageDto>>> Update(Guid id, [FromBody] UpdatePackageCommand request)
     {
         request = request with { Id = id }; // set the id from route to the command
@@ -54,16 +57,10 @@ public class PackagesController : ControllerBase
         return result; // filter applyed in ResultActionFilter  
     }
 
-    // POST: api/packages/{id}/ship
-    [HttpPost("{id:guid}/ship")]
-        public async Task<ActionResult<Result<PackageDto>>> Ship(Guid id)
-    {
-        var result = await _mediator.Send(new ShipPackageCommand(id));
-        return result;
-    }
 
     // POST: api/packages/{id}/deliver
     [HttpPost("{id:guid}/deliver")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
     {
         var result = await _mediator.Send(new DeliverPackageCommand(id));
@@ -72,17 +69,21 @@ public class PackagesController : ControllerBase
 
     // POST: api/packages/{id}/cancel
     [HttpPost("{id:guid}/cancel")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
         public async Task<ActionResult<Result<PackageDto>>> Cancel(Guid id)
     {
         var result = await _mediator.Send(new CancelPackageCommand(id));
         return result;
     }
 
-    // GET: api/packages/{id}/location
-    [HttpGet("{id:guid}/location")]
-    public async Task<ActionResult<Result<ShipmentDto?>>> GetLocation(Guid id)
+
+
+    // GET: api/packages/tracking/{trackingNumber} (public minimal info)
+    [HttpGet("tracking/{trackingNumber}")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    public async Task<ActionResult<Result<PackagePublicLocationDto?>>> GetByTracking(string trackingNumber)
     {
-        var result = await _mediator.Send(new GetPackageLocationQuery(id));
+        var result = await _mediator.Send(new GetPackageLocationByTrackingQuery(trackingNumber));
         return result;
     }
 }
