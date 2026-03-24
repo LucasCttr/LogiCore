@@ -25,33 +25,35 @@ public class UnitOfWork : IUnitOfWork
 
     private async Task<int> CommitWithDomainEventsAsync(CancellationToken cancellationToken)
     {
-        // Identify entities with domain events
-        var domainEntities = _dbContext.ChangeTracker
-            .Entries<IHasDomainEvents>()
-            .Where(x => x.Entity.DomainEvents.Any())
-            .Select(x => x.Entity)
-            .ToList();
-
-        // Extract all domain events from those entities
-        var domainEvents = domainEntities
-            .SelectMany(x => x.DomainEvents)
-            .ToList();
-
-        // Clear domain events from entities to prevent re-processing in case of retries or multiple handlers
-        foreach (var entity in domainEntities)
+        // Process domain events in a loop so handlers that publish new events are handled too.
+        while (true)
         {
-            entity.ClearDomainEvents();
+            var domainEntries = _dbContext.ChangeTracker
+                .Entries<IHasDomainEvents>()
+                .Where(x => x.Entity.DomainEvents.Any())
+                .ToList();
+
+            if (!domainEntries.Any())
+                break;
+
+            var domainEvents = domainEntries
+                .SelectMany(e => e.Entity.DomainEvents)
+                .ToList();
+
+            // Clear events before publishing to avoid re-processing on retries
+            foreach (var entry in domainEntries)
+            {
+                entry.Entity.ClearDomainEvents();
+            }
+
+            // Publish all collected events. Handlers may add entities or domain events to the DbContext.
+            foreach (var domainEvent in domainEvents)
+            {
+                await _mediator.Publish(domainEvent, cancellationToken);
+            }
         }
 
-        // Save changes to the database first. If this fails, we won't publish any events.
-        var result = await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Publish domain events after successful commit. This ensures that events are only published if the transaction succeeds.
-        foreach (var domainEvent in domainEvents)
-        {
-            await _mediator.Publish(domainEvent, cancellationToken);
-        }
-
-        return result;
+        // Single save at the end: persist aggregate changes and any additions made by event handlers together.
+        return await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

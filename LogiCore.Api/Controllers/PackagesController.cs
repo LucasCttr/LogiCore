@@ -78,12 +78,21 @@ public class PackagesController : ControllerBase
 
 
 
-    // GET: api/packages/tracking/{trackingNumber} (public minimal info)
+    // GET: api/packages/tracking/{trackingNumber} (public minimal history)
     [HttpGet("tracking/{trackingNumber}")]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
-    public async Task<ActionResult<Result<PackagePublicLocationDto?>>> GetByTracking(string trackingNumber)
+    public async Task<ActionResult<Result<PackagePublicHistoryDto?>>> GetByTracking(string trackingNumber)
     {
         var result = await _mediator.Send(new GetPackageLocationByTrackingQuery(trackingNumber));
+        return result;
+    }
+
+    // GET: api/packages/{id}/history (internal)
+    [HttpGet("{id:guid}/history")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<IEnumerable<PackageInternalHistoryDto>>>> GetHistory(Guid id)
+    {
+        var result = await _mediator.Send(new LogiCore.Application.Features.Package.GetPackageHistory.GetPackageHistoryQuery(id));
         return result;
     }
 }

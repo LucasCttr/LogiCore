@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using LogiCore.Domain.Common.Events;
 using LogiCore.Infrastructure.Persistence;
+using LogiCore.Application.Common.Interfaces.Security;
 using LogiCore.Domain.Entities;
 
 namespace LogiCore.Infrastructure.Events;
@@ -11,10 +12,12 @@ namespace LogiCore.Infrastructure.Events;
 internal class PackageStatusChangedHandler : INotificationHandler<PackageStatusChangedEvent>
 {
     private readonly LogiCoreDbContext _dbContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public PackageStatusChangedHandler(LogiCoreDbContext dbContext)
+    public PackageStatusChangedHandler(LogiCoreDbContext dbContext, ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
+        _currentUserService = currentUserService;
     }
 
     public Task Handle(PackageStatusChangedEvent notification, CancellationToken cancellationToken)
@@ -25,7 +28,9 @@ internal class PackageStatusChangedHandler : INotificationHandler<PackageStatusC
             PackageId = notification.PackageId,
             FromStatus = notification.OldStatus,
             ToStatus = notification.NewStatus,
-            OccurredAt = notification.OccurredOn
+            OccurredAt = notification.OccurredOn,
+            EmployeeId = _currentUserService?.UserId,
+            InternalNotes = null
         };
 
         _dbContext.Add(history);

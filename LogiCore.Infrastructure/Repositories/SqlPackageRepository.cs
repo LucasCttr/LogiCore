@@ -51,6 +51,15 @@ public class SqlPackageRepository : IPackageRepository
     public async Task<Package?> GetByTrackingNumberAsync(string trackingNumber) =>
         await _context.Packages.AsNoTracking().FirstOrDefaultAsync(p => p.TrackingNumber == trackingNumber);
 
+    public async Task<IEnumerable<PackageStatusHistory>> GetHistoryAsync(Guid packageId)
+    {
+        return await _context.PackageStatusHistories
+            .AsNoTracking()
+            .Where(h => h.PackageId == packageId)
+            .OrderByDescending(h => h.OccurredAt)
+            .ToListAsync();
+    }
+
     public Task<Package> UpdateAsync(Package package)
     {
         var entry = _context.Packages.Update(package);

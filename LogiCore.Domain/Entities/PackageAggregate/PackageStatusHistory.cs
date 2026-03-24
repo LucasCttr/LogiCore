@@ -9,4 +9,7 @@ public class PackageStatusHistory
     public PackageStatus FromStatus { get; set; }
     public PackageStatus ToStatus { get; set; }
     public DateTime OccurredAt { get; set; }
+    // Optional auditing information
+    public string? EmployeeId { get; set; }
+    public string? InternalNotes { get; set; }
 }

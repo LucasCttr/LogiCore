@@ -4,7 +4,7 @@ using LogiCore.Application.DTOs;
 
 namespace LogiCore.Application.Features.Package.GetPackageLocation;
 
-public class GetPackageLocationByTrackingQuery : IRequest<Result<PackagePublicLocationDto?>>
+public class GetPackageLocationByTrackingQuery : IRequest<Result<PackagePublicHistoryDto?>>
 {
     public string TrackingNumber { get; init; }
     public GetPackageLocationByTrackingQuery(string trackingNumber) => TrackingNumber = trackingNumber;

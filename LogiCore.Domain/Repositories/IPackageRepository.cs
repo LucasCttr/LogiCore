@@ -10,6 +10,7 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
     {
         Task<Package?> GetByIdAsync(Guid id);
         Task<Package?> GetByTrackingNumberAsync(string trackingNumber);
+        Task<IEnumerable<PackageStatusHistory>> GetHistoryAsync(Guid packageId);
         Task<IEnumerable<Package>> GetAllAsync();
         Task<(IEnumerable<Package> Items, int TotalCount)> GetPagedAsync(int page, int pageSize);
         Task<bool> ExistsByTrackingNumberAsync(string trackingNumber);
