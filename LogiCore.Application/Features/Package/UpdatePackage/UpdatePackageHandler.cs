@@ -7,6 +7,7 @@ using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using AutoMapper;
+using LogiCore.Domain.ValueObjects;
 
 
 namespace LogiCore.Application.Features.Packages
@@ -36,7 +37,14 @@ namespace LogiCore.Application.Features.Packages
 
             if (!string.IsNullOrEmpty(request.RecipientName))
             {
-                var recipient = LogiCore.Domain.ValueObjects.Recipient.Create(request.RecipientName, request.RecipientAddress, request.RecipientPhone);
+                var recipient = Recipient.Create(request.RecipientName,
+                    request.RecipientAddress!,
+                    request.RecipientPhone!,
+                    request.RecipientFloorApartment!,
+                    request.RecipientCity!,
+                    request.RecipientProvince!,
+                    request.RecipientPostalCode!,
+                    request.RecipientDni!);
                 existingPackage.UpdateRecipient(recipient);
             }
 

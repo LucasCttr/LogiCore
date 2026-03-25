@@ -27,6 +27,11 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             r.Property(x => x.Name).HasColumnName("RecipientName").IsRequired().HasMaxLength(200);
             r.Property(x => x.Address).HasColumnName("RecipientAddress").HasMaxLength(500);
             r.Property(x => x.Phone).HasColumnName("RecipientPhone").HasMaxLength(50);
+            r.Property(x => x.FloorApartment).HasColumnName("RecipientFloorApartment").HasMaxLength(50);
+            r.Property(x => x.City).HasColumnName("RecipientCity").HasMaxLength(200);
+            r.Property(x => x.Province).HasColumnName("RecipientProvince").HasMaxLength(200);
+            r.Property(x => x.PostalCode).HasColumnName("RecipientPostalCode").HasMaxLength(20);
+            r.Property(x => x.Dni).HasColumnName("RecipientDni").HasMaxLength(50);
         });
 
         // Map Dimensions as owned value object stored in Package table (backing field _dimensions)

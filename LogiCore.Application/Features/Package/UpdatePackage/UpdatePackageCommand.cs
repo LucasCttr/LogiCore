@@ -15,6 +15,11 @@ namespace LogiCore.Application.Features.Packages
         public string? RecipientName { get; init; }
         public string? RecipientAddress { get; init; }
         public string? RecipientPhone { get; init; }
+        public string? RecipientFloorApartment { get; init; }
+        public string? RecipientCity { get; init; }
+        public string? RecipientProvince { get; init; }
+        public string? RecipientPostalCode { get; init; }
+        public string? RecipientDni { get; init; }
         public decimal? Weight { get; init; }
     }
 }

@@ -33,7 +33,14 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         if (string.IsNullOrEmpty(userId))
             return Result<PackageDto>.Failure("Unauthorized");
 
-        var recipient = Recipient.Create(request.RecipientName, request.RecipientAddress, request.RecipientPhone);
+        var recipient = Recipient.Create(request.RecipientName,
+            request.RecipientAddress,
+            request.RecipientPhone,
+            request.RecipientFloorApartment,
+            request.RecipientCity,
+            request.RecipientProvince,
+            request.RecipientPostalCode,
+            request.RecipientDni);
         var dims = Dimensions.Create(request.LengthCm, request.WidthCm, request.HeightCm);
         var package = Domain.Entities.Package.Create(request.TrackingNumber, recipient, request.Weight, userId, dims);
         var added = await _packageRepository.AddAsync(package);

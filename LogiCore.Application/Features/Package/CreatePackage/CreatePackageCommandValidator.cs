@@ -14,6 +14,14 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
             .NotEmpty().WithMessage("RecipientName is required.")
             .MaximumLength(200);
 
+        RuleFor(x => x.RecipientCity)
+            .MaximumLength(200)
+            .When(x => !string.IsNullOrWhiteSpace(x.RecipientCity));
+
+        RuleFor(x => x.RecipientPostalCode)
+            .MaximumLength(20)
+            .When(x => !string.IsNullOrWhiteSpace(x.RecipientPostalCode));
+
         RuleFor(x => x.Weight)
             .GreaterThan(0).WithMessage("Weight must be greater than zero.");
 
