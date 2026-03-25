@@ -12,6 +12,7 @@ using LogiCore.Application.Features.Packages;
 using MediatR;
 using LogiCore.Application.Common.Behaviors;
 using Serilog;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.INotificationService, LogiCore.Infrastructure.Services.ConsoleNotificationService>();
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.IEmailService, LogiCore.Infrastructure.Services.SmtpEmailService>();
 builder.Services.AddTransient<LogiCore.Domain.Common.Interfaces.ICostCalculator, LogiCore.Infrastructure.Services.StandardCostCalculator>();
+builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.IMetricsService, LogiCore.Infrastructure.Services.DatabaseMetricsService>();
+// Background publisher that exports business metrics as Prometheus Gauges
+builder.Services.AddHostedService<LogiCore.Infrastructure.Services.PrometheusMetricsPublisher>();
 
 // --- Identity and Authentication ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -114,6 +118,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+
+// Prometheus HTTP metrics (requests) and scrape endpoint
+app.UseHttpMetrics();
+app.MapMetrics();
 
 app.UseAuthentication();
 app.UseAuthorization();
