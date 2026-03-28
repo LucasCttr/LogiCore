@@ -133,7 +133,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 // Prometheus HTTP metrics (requests) and scrape endpoint
 app.UseHttpMetrics();
