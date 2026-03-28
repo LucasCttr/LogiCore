@@ -126,11 +126,9 @@ var app = builder.Build();
 
 app.UseExceptionHandler(); 
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Enable Swagger UI for all environments (including Production)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseSerilogRequestLogging();
 // app.UseHttpsRedirection();
