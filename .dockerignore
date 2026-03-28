@@ -1,0 +1,25 @@
+# Ignore build outputs and local files
+**/bin/
+**/obj/
+bin/
+obj/
+
+# IDE and user files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.ide
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+
+# Publish output
+publish/
+
+# Launch settings
+LogiCore.Api/Properties/launchSettings.json
