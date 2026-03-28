@@ -21,12 +21,24 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<LogiCoreDb
             .AddEnvironmentVariables()
             .Build();
 
-        var conn = config.GetConnectionString("DefaultConnection");
+        // Prefer DATABASE_URL (e.g., provided by Railway); otherwise use DefaultConnection
+        var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        string? conn = null;
+        if (!string.IsNullOrWhiteSpace(dbUrl))
+        {
+            var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(dbUrl);
+            conn = npgsqlBuilder.ToString();
+        }
+        else
+        {
+            conn = config.GetConnectionString("DefaultConnection");
+        }
+
         if (string.IsNullOrWhiteSpace(conn))
-            throw new InvalidOperationException("Connection string 'DefaultConnection' not found. Set it in LogiCore.Api/appsettings.Development.json or provide as env var.");
+            throw new InvalidOperationException("Connection string 'DefaultConnection' not found. Set it in LogiCore.Api/appsettings.Development.json or provide DATABASE_URL env var.");
 
         var optionsBuilder = new DbContextOptionsBuilder<LogiCoreDbContext>();
-        optionsBuilder.UseSqlServer(conn);
+        optionsBuilder.UseNpgsql(conn);
         return new LogiCoreDbContext(optionsBuilder.Options);
     }
 }

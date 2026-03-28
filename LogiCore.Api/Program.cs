@@ -35,8 +35,24 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCommandHandler).Assembly);
 
 // --- Persistence ---
+string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+string? connectionString = null;
+if (!string.IsNullOrWhiteSpace(databaseUrl))
+{
+    // Railway provides DATABASE_URL in the form: postgres://user:pass@host:port/dbname
+    var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(databaseUrl);
+    connectionString = npgsqlBuilder.ToString();
+}
+else
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+}
+
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("Database connection string is not configured. Set DATABASE_URL or ConnectionStrings:DefaultConnection.");
+
 builder.Services.AddDbContext<LogiCoreDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
 builder.Services.AddScoped<IShipmentRepository, SqlShipmentRepository>();
