@@ -7,4 +7,6 @@ public enum ShipmentStatus
     Dispatched = 2,
     Arrived = 3,
     Canceled = 4
+    ,
+    Delivered = 5
 }

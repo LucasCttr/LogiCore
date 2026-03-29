@@ -33,7 +33,7 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
             if (!vehicle.IsActive)
                 return Result<ShipmentDto>.Failure("Vehicle is not active.");
 
-            var shipment = LogiCore.Domain.Entities.Shipment.Create(request.RouteCode, request.VehicleId, vehicle.MaxWeightCapacity, vehicle.MaxVolumeCapacity);
+            var shipment = LogiCore.Domain.Entities.Shipment.Create(request.RouteCode, request.VehicleId, vehicle.MaxWeightCapacity, vehicle.MaxVolumeCapacity, request.EstimatedDelivery);
             var added = await _shipmentRepository.AddAsync(shipment);
 
             // Commit to persist the new shipment and publish any domain events

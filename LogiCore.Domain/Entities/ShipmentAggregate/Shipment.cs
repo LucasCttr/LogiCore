@@ -18,6 +18,10 @@ public class Shipment : IHasDomainEvents
     public Driver? Driver { get; private set; }
     public decimal VehicleMaxWeightCapacity { get; private set; }
     public decimal VehicleMaxVolumeCapacity { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    public DateTime EstimatedDelivery { get; private set; }
+    public DateTime? ShippedAt { get; private set; }
+    public DateTime? DeliveredAt { get; private set; }
     private readonly List<Package> _packages = new();
     public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }
@@ -30,7 +34,7 @@ public class Shipment : IHasDomainEvents
 
     protected Shipment() { }
 
-    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity)
+    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery)
     {
         if (string.IsNullOrWhiteSpace(routeCode))
             throw new DomainException("Route code is required.");
@@ -43,6 +47,9 @@ public class Shipment : IHasDomainEvents
         if (vehicleMaxVolumeCapacity <= 0)
             throw new DomainException("Vehicle max volume capacity must be greater than zero.");
 
+        if (estimatedDelivery < DateTime.UtcNow)
+            throw new DomainException("Estimated delivery date cannot be in the past.");
+
         return new Shipment
         {
             Id = Guid.NewGuid(),
@@ -50,7 +57,9 @@ public class Shipment : IHasDomainEvents
             VehicleId = vehicleId,
             VehicleMaxWeightCapacity = vehicleMaxWeightCapacity,
             VehicleMaxVolumeCapacity = vehicleMaxVolumeCapacity,
-            Status = ShipmentStatus.Draft
+            Status = ShipmentStatus.Draft,
+            CreatedAt = DateTime.UtcNow,
+            EstimatedDelivery = estimatedDelivery
         };
     }
 
@@ -90,6 +99,7 @@ public class Shipment : IHasDomainEvents
             throw new DomainException($"Cannot dispatch a shipment in {Status} status.");
 
         Status = ShipmentStatus.Dispatched;
+        if (ShippedAt == null) ShippedAt = DateTime.UtcNow;
 
         // Start transit for all packages in the shipment
         foreach (var package in _packages)
@@ -115,5 +125,20 @@ public class Shipment : IHasDomainEvents
             throw new DomainException("DriverId is required.");
 
         DriverId = driverId;
+    }
+
+    public void MarkAsDelivered()
+    {
+        if (Status != ShipmentStatus.Dispatched && Status != ShipmentStatus.Arrived)
+            throw new DomainException("Only dispatched or arrived shipments can be marked as delivered.");
+
+        DeliveredAt = DateTime.UtcNow;
+        Status = ShipmentStatus.Delivered;
+
+        AddDomainEvent(new ShipmentDeliveredEvent
+        {
+            ShipmentId = this.Id,
+            OccurredOn = DateTime.UtcNow
+        });
     }
 }

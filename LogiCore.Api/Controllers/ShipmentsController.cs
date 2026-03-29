@@ -64,10 +64,29 @@ public class ShipmentsController : ControllerBase
     public async Task<ActionResult<Result<ShipmentDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetShipmentByIdQuery(id));
+        if (result == null) return NotFound();
+        if (!result.IsSuccess) return result;
+
+        var shipment = result.Value;
+
+        // allow admins
+        if (User.IsInRole("Admin")) return result;
+
+        // otherwise allow only the driver assigned to this shipment
+        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+
+        var driver = driverResult.Value!;
+        if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
+
         return result;
     }
 
     // POST: api/shipments/{id}/packages
+    [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/packages")]
     public async Task<ActionResult<Result<ShipmentDto>>> AddPackage(Guid id, [FromBody] AddPackageToShipmentCommand request)
     {

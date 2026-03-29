@@ -9,6 +9,10 @@ public class ShipmentDto
 	public string RouteCode { get; set; } = null!;
 	public Guid VehicleId { get; set; }
 	public Guid? DriverId { get; set; }
+	public DateTime CreatedAt { get; set; }
+	public DateTime EstimatedDelivery { get; set; }
+	public DateTime? ShippedAt { get; set; }
+	public DateTime? DeliveredAt { get; set; }
 	public decimal VehicleMaxWeightCapacity { get; set; }
 	public decimal VehicleMaxVolumeCapacity { get; set; }
 	public IEnumerable<Guid> PackageIds { get; set; } = Enumerable.Empty<Guid>();
