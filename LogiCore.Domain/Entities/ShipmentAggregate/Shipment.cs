@@ -22,6 +22,7 @@ public class Shipment : IHasDomainEvents
     public DateTime EstimatedDelivery { get; private set; }
     public DateTime? ShippedAt { get; private set; }
     public DateTime? DeliveredAt { get; private set; }
+    public DateTime? ArrivedAt { get; private set; }
     private readonly List<Package> _packages = new();
     public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }
@@ -136,6 +137,34 @@ public class Shipment : IHasDomainEvents
         Status = ShipmentStatus.Delivered;
 
         AddDomainEvent(new ShipmentDeliveredEvent
+        {
+            ShipmentId = this.Id,
+            OccurredOn = DateTime.UtcNow
+        });
+    }
+
+    public void MarkAsArrived()
+    {
+        if (Status != ShipmentStatus.Dispatched)
+            throw new DomainException("Only dispatched shipments can be marked as arrived.");
+
+        ArrivedAt = DateTime.UtcNow;
+        Status = ShipmentStatus.Arrived;
+
+        AddDomainEvent(new ShipmentArrivedEvent
+        {
+            ShipmentId = this.Id,
+            OccurredOn = DateTime.UtcNow
+        });
+    }
+
+    public void Cancel()
+    {
+        if (Status == ShipmentStatus.Dispatched || Status == ShipmentStatus.Arrived || Status == ShipmentStatus.Delivered)
+            throw new DomainException("Cannot cancel a shipment that is already dispatched or completed.");
+
+        Status = ShipmentStatus.Canceled;
+        AddDomainEvent(new ShipmentCanceledEvent
         {
             ShipmentId = this.Id,
             OccurredOn = DateTime.UtcNow

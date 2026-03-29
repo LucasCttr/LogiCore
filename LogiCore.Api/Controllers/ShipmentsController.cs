@@ -113,4 +113,61 @@ public class ShipmentsController : ControllerBase
         var result = await _mediator.Send(request);
         return result;
     }
+
+    // POST: api/shipments/{id}/arrive (Driver only)
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id:guid}/arrive")]
+    public async Task<ActionResult<Result<bool>>> Arrive(Guid id)
+    {
+        // ensure only assigned driver can mark arrival
+        var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
+        if (getResult == null) return NotFound();
+        if (!getResult.IsSuccess) return BadRequest(getResult);
+
+        var shipment = getResult.Value!;
+        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+        var driver = driverResult.Value!;
+
+        if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
+
+        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.ArriveShipment.ArriveShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/complete (Driver only)
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id:guid}/complete")]
+    public async Task<ActionResult<Result<bool>>> Complete(Guid id)
+    {
+        // ensure only assigned driver can complete
+        var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
+        if (getResult == null) return NotFound();
+        if (!getResult.IsSuccess) return BadRequest(getResult);
+
+        var shipment = getResult.Value!;
+        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+        var driver = driverResult.Value!;
+
+        if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
+
+        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.CompleteShipment.CompleteShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/cancel (Admin only)
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<ActionResult<Result<bool>>> Cancel(Guid id)
+    {
+        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.CancelShipment.CancelShipmentCommand { ShipmentId = id });
+        return result;
+    }
 }
