@@ -33,12 +33,30 @@ public class ShipmentsController : ControllerBase
         return result;
     }
 
-    // GET: api/shipments
+    // GET: api/shipments (Admin only)
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetAll()
     {
         var result = await _mediator.Send(new GetAllShipmentsQuery());
         return result;
+    }
+
+    // GET: api/shipments/me (Driver only) - shipments assigned to current driver
+    [Authorize(Roles = "Driver")]
+    [HttpGet("me")]
+    public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetMyShipments()
+    {
+        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        // get driver id for current user
+        var driverResult = await _mediator.Send(new LogiCore.Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Result<IEnumerable<ShipmentDto>>.Failure("Driver profile not found.", LogiCore.Application.Common.Models.ErrorType.NotFound);
+
+        var driverId = driverResult.Value!.Id;
+        var shipmentsResult = await _mediator.Send(new LogiCore.Application.Features.Shipment.GetByDriver.GetShipmentsByDriverQuery(driverId));
+        return shipmentsResult;
     }
 
     // GET: api/shipments/{id}

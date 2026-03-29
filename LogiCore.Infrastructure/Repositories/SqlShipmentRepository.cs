@@ -27,6 +27,17 @@ public class SqlShipmentRepository : IShipmentRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Shipment>> GetByDriverIdAsync(Guid driverId)
+    {
+        return await _context.Shipments
+            .AsNoTracking()
+            .Include(s => s.Packages)
+            .Include(s => s.Vehicle)
+            .Include(s => s.Driver)
+            .Where(s => s.DriverId == driverId)
+            .ToListAsync();
+    }
+
     public async Task<(IEnumerable<Shipment> Items, int TotalCount)> GetPagedAsync(int page, int pageSize)
     {
         if (page < 1) page = 1;

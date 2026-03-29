@@ -10,6 +10,7 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
         Task<Shipment?> GetByIdAsync(Guid id);
         Task<Shipment?> GetByPackageIdAsync(Guid packageId);
         Task<IEnumerable<Shipment>> GetAllAsync();
+        Task<IEnumerable<Shipment>> GetByDriverIdAsync(Guid driverId);
         Task<(IEnumerable<Shipment> Items, int TotalCount)> GetPagedAsync(int page, int pageSize);
         Task<Shipment> AddAsync(Shipment shipment);
         Task<Shipment> UpdateAsync(Shipment shipment);
