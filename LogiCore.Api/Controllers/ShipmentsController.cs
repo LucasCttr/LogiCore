@@ -9,6 +9,13 @@ using LogiCore.Application.Features.Shipment.DispatchShipment;
 using LogiCore.Application.Features.Shipment.AssignDriver;
 using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using LogiCore.Application.Features.Driver.GetByUser;
+using LogiCore.Application.Features.Shipment.GetByDriver;
+using LogiCore.Application.Features.Shipment.ArriveShipment;
+using LogiCore.Application.Features.Shipment.CompleteShipment;
+using LogiCore.Application.Features.Shipment.CancelShipment;
 
 namespace LogiCore.Api.Controllers;
 
@@ -47,15 +54,15 @@ public class ShipmentsController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetMyShipments()
     {
-        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
         // get driver id for current user
-        var driverResult = await _mediator.Send(new LogiCore.Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
-        if (driverResult == null || !driverResult.IsSuccess) return Result<IEnumerable<ShipmentDto>>.Failure("Driver profile not found.", LogiCore.Application.Common.Models.ErrorType.NotFound);
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Result<IEnumerable<ShipmentDto>>.Failure("Driver profile not found.", ErrorType.NotFound);
 
         var driverId = driverResult.Value!.Id;
-        var shipmentsResult = await _mediator.Send(new LogiCore.Application.Features.Shipment.GetByDriver.GetShipmentsByDriverQuery(driverId));
+        var shipmentsResult = await _mediator.Send(new GetShipmentsByDriverQuery(driverId));
         return shipmentsResult;
     }
 
@@ -73,10 +80,10 @@ public class ShipmentsController : ControllerBase
         if (User.IsInRole("Admin")) return result;
 
         // otherwise allow only the driver assigned to this shipment
-        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
-        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
         if (driverResult == null || !driverResult.IsSuccess) return Forbid();
 
         var driver = driverResult.Value!;
@@ -125,16 +132,16 @@ public class ShipmentsController : ControllerBase
         if (!getResult.IsSuccess) return BadRequest(getResult);
 
         var shipment = getResult.Value!;
-        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
-        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
         if (driverResult == null || !driverResult.IsSuccess) return Forbid();
         var driver = driverResult.Value!;
 
         if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
 
-        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.ArriveShipment.ArriveShipmentCommand { ShipmentId = id });
+        var result = await _mediator.Send(new ArriveShipmentCommand { ShipmentId = id });
         return result;
     }
 
@@ -149,16 +156,16 @@ public class ShipmentsController : ControllerBase
         if (!getResult.IsSuccess) return BadRequest(getResult);
 
         var shipment = getResult.Value!;
-        var currentUserId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
-        var driverResult = await _mediator.Send(new Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
         if (driverResult == null || !driverResult.IsSuccess) return Forbid();
         var driver = driverResult.Value!;
 
         if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
 
-        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.CompleteShipment.CompleteShipmentCommand { ShipmentId = id });
+        var result = await _mediator.Send(new CompleteShipmentCommand { ShipmentId = id });
         return result;
     }
 
@@ -167,7 +174,7 @@ public class ShipmentsController : ControllerBase
     [HttpPost("{id:guid}/cancel")]
     public async Task<ActionResult<Result<bool>>> Cancel(Guid id)
     {
-        var result = await _mediator.Send(new LogiCore.Application.Features.Shipment.CancelShipment.CancelShipmentCommand { ShipmentId = id });
+        var result = await _mediator.Send(new CancelShipmentCommand { ShipmentId = id });
         return result;
     }
 }

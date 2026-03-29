@@ -5,6 +5,13 @@ using LogiCore.Domain.Common.Exceptions;
 
 namespace LogiCore.Domain.Entities;
 
+public enum VehicleStatus
+{
+    Active = 0,
+    InRepair = 1,
+    OutOfService = 2
+}
+
 public class Vehicle : IHasDomainEvents
 {
     public Guid Id { get; private set; }
@@ -12,6 +19,7 @@ public class Vehicle : IHasDomainEvents
     public decimal MaxWeightCapacity { get; private set; }
     public decimal MaxVolumeCapacity { get; private set; }
     public bool IsActive { get; private set; }
+    public VehicleStatus Status { get; private set; }
     public List<Shipment> Shipments { get; private set; } = new();
 
     private readonly List<IDomainEvent> _domainEvents = new();
@@ -38,9 +46,23 @@ public class Vehicle : IHasDomainEvents
             Plate = plate.ToUpper().Trim(),
             MaxWeightCapacity = maxWeight,
             MaxVolumeCapacity = maxVolume,
-            IsActive = true
+            IsActive = true,
+            Status = VehicleStatus.Active
         };
     }
 
-    public void SetActive(bool active) => IsActive = active;
+    public void SetActive(bool active)
+    {
+        IsActive = active;
+        if (active)
+            Status = VehicleStatus.Active;
+        else if (Status == VehicleStatus.Active)
+            Status = VehicleStatus.OutOfService;
+    }
+
+    public void SetStatus(VehicleStatus status)
+    {
+        Status = status;
+        IsActive = status == VehicleStatus.Active;
+    }
 }
