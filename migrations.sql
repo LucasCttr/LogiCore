@@ -362,3 +362,47 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329222616_AddVehicleStatus') THEN
+    ALTER TABLE "Vehicle" ADD "Status" integer NOT NULL DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329222616_AddVehicleStatus') THEN
+    ALTER TABLE "Shipments" ADD "ArrivedAt" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329222616_AddVehicleStatus') THEN
+    CREATE TABLE "Locations" (
+        "Id" uuid NOT NULL,
+        "Name" text NOT NULL,
+        "AddressLine1" text NOT NULL,
+        "AddressLine2" text,
+        "City" text NOT NULL,
+        "State" text,
+        "PostalCode" text NOT NULL,
+        "Country" text NOT NULL,
+        "CreatedAt" timestamp with time zone NOT NULL,
+        CONSTRAINT "PK_Locations" PRIMARY KEY ("Id")
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329222616_AddVehicleStatus') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260329222616_AddVehicleStatus', '8.0.0');
+    END IF;
+END $EF$;
+COMMIT;
+
