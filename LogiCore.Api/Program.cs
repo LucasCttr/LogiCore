@@ -58,6 +58,7 @@ builder.Services.AddScoped<IPackageRepository, SqlPackageRepository>();
 builder.Services.AddScoped<IShipmentRepository, SqlShipmentRepository>();
 builder.Services.AddScoped<IVehicleRepository, SqlVehicleRepository>();
 builder.Services.AddScoped<IDriverRepository, SqlDriverRepository>();
+builder.Services.AddScoped<ILocationRepository, SqlLocationRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Infrastructure services
