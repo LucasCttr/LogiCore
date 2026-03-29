@@ -5,6 +5,7 @@ using LogiCore.Application.Features.Shipment.GetById;
 using LogiCore.Application.Features.Shipment.GetAll;
 using LogiCore.Application.Features.Shipment.AddPackageToShipment;
 using LogiCore.Application.Features.Shipment.DispatchShipment;
+using LogiCore.Application.Features.Shipment.AssignDriver;
 using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
 
@@ -60,6 +61,15 @@ public class ShipmentsController : ControllerBase
     public async Task<ActionResult<Result<bool>>> Dispatch(Guid id)
     {
         var result = await _mediator.Send(new DispatchShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/assign-driver
+    [HttpPost("{id:guid}/assign-driver")]
+    public async Task<ActionResult<Result<bool>>> AssignDriver(Guid id, [FromBody] AssignDriverToShipmentCommand request)
+    {
+        request.ShipmentId = id;
+        var result = await _mediator.Send(request);
         return result;
     }
 }

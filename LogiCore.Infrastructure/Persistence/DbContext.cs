@@ -10,6 +10,7 @@ public class LogiCoreDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Package> Packages => Set<Package>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<PackageStatusHistory> PackageStatusHistories => Set<PackageStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -22,6 +22,8 @@ public class SqlShipmentRepository : IShipmentRepository
         return await _context.Shipments
             .AsNoTracking()
             .Include(s => s.Packages)
+            .Include(s => s.Vehicle)
+            .Include(s => s.Driver)
             .ToListAsync();
     }
 
@@ -34,6 +36,8 @@ public class SqlShipmentRepository : IShipmentRepository
         var items = await _context.Shipments
             .AsNoTracking()
             .Include(s => s.Packages)
+            .Include(s => s.Vehicle)
+            .Include(s => s.Driver)
             .OrderBy(s => s.RouteCode)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -45,11 +49,15 @@ public class SqlShipmentRepository : IShipmentRepository
     public async Task<Shipment?> GetByIdAsync(Guid id) =>
         await _context.Shipments
             .Include(s => s.Packages)
+            .Include(s => s.Vehicle)
+            .Include(s => s.Driver)
             .FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<Shipment?> GetByPackageIdAsync(Guid packageId) =>
         await _context.Shipments
             .Include(s => s.Packages)
+            .Include(s => s.Vehicle)
+            .Include(s => s.Driver)
             .FirstOrDefaultAsync(s => s.Packages.Any(p => p.Id == packageId));
 
     public Task<Shipment> UpdateAsync(Shipment shipment)

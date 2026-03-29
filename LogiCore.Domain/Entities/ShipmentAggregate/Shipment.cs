@@ -14,9 +14,12 @@ public class Shipment : IHasDomainEvents
     public string RouteCode { get; private set; } = null!;
     public Guid VehicleId { get; private set; }
     public Vehicle? Vehicle { get; private set; }
+    public Guid? DriverId { get; private set; }
+    public Driver? Driver { get; private set; }
     public decimal VehicleMaxWeightCapacity { get; private set; }
     public decimal VehicleMaxVolumeCapacity { get; private set; }
-    public List<Package> Packages { get; private set; } = new();
+    private readonly List<Package> _packages = new();
+    public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }
 
     private readonly List<IDomainEvent> _domainEvents = new();
@@ -64,23 +67,23 @@ public class Shipment : IHasDomainEvents
             
         // Volume check
         var volumeCapacity = Vehicle?.MaxVolumeCapacity ?? VehicleMaxVolumeCapacity;
-        var currentVolume = Packages.Sum(p => p.Dimensions?.VolumeCm3 ?? 0);
+        var currentVolume = _packages.Sum(p => p.Dimensions?.VolumeCm3 ?? 0);
         var packageVolume = package.Dimensions?.VolumeCm3 ?? 0m;
 
         if (currentVolume + packageVolume > volumeCapacity)
             throw new DomainException("The vehicle would exceed its volume capacity (cm3).");
 
-        Packages.Add(package);
+        _packages.Add(package);
     }
 
     public decimal GetCurrentWeight()
     {
-        return Packages.Sum(p => p.Weight);
+        return _packages.Sum(p => p.Weight);
     }
 
     public void DispatchShipment()
     {
-        if (!Packages.Any())
+        if (!_packages.Any())
             throw new DomainException("Cannot dispatch an empty shipment.");
 
         if (Status != ShipmentStatus.Draft)
@@ -89,7 +92,7 @@ public class Shipment : IHasDomainEvents
         Status = ShipmentStatus.Dispatched;
 
         // Start transit for all packages in the shipment
-        foreach (var package in Packages)
+        foreach (var package in _packages)
         {
             package.StartTransit();
         }
@@ -105,4 +108,12 @@ public class Shipment : IHasDomainEvents
 
     // Backwards-compatible alias
     public void Dispatch() => DispatchShipment();
+
+    public void AssignDriver(Guid driverId)
+    {
+        if (driverId == Guid.Empty)
+            throw new DomainException("DriverId is required.");
+
+        DriverId = driverId;
+    }
 }
