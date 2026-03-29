@@ -20,6 +20,15 @@ public class SqlDriverRepository : IDriverRepository
     public async Task<IEnumerable<Driver>> GetAllAsync() =>
         await _context.Set<Driver>().AsNoTracking().ToListAsync();
 
+    public async Task<IEnumerable<Driver>> GetAvailableAsync()
+    {
+        return await _context.Set<Driver>()
+            .AsNoTracking()
+            .Include(d => d.Shipments)
+            .Where(d => d.IsActive && !d.Shipments.Any())
+            .ToListAsync();
+    }
+
     public async Task<Driver> AddAsync(Driver driver)
     {
         var entry = await _context.Set<Driver>().AddAsync(driver);

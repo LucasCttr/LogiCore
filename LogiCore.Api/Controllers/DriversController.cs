@@ -41,6 +41,15 @@ public class DriversController : ControllerBase
         return result;
     }
 
+    // GET: api/drivers/available (Admin only)
+    [Authorize(Roles = "Admin")]
+    [HttpGet("available")]
+    public async Task<ActionResult<Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAvailable()
+    {
+        var result = await _mediator.Send(new LogiCore.Application.Features.Driver.GetAvailable.GetAvailableDriversQuery());
+        return result;
+    }
+
     // GET: api/drivers/{id}
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> GetById(Guid id)
