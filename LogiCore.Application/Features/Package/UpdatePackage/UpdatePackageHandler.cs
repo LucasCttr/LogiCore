@@ -28,7 +28,7 @@ namespace LogiCore.Application.Features.Packages
             var existingPackage = await _packageRepository.GetByIdAsync(request.Id);
             if (existingPackage == null)
             {
-                return Result<PackageDto>.Failure("Package not found.");
+                return Result<PackageDto>.Failure("Package not found.", ErrorType.NotFound);
             }
 
             // Update fields via entity methods to respect encapsulation

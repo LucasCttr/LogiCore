@@ -22,7 +22,7 @@ public class GetVehicleByIdHandler : IRequestHandler<GetVehicleByIdQuery, Result
     public async Task<Result<VehicleDto>> Handle(GetVehicleByIdQuery request, CancellationToken cancellationToken)
     {
         var vehicle = await _vehicleRepository.GetByIdAsync(request.Id);
-        if (vehicle is null) return Result<VehicleDto>.Failure("Vehicle not found.");
+        if (vehicle is null) return Result<VehicleDto>.Failure("Vehicle not found.", ErrorType.NotFound);
         return Result<VehicleDto>.Success(_mapper.Map<VehicleDto>(vehicle));
     }
 }

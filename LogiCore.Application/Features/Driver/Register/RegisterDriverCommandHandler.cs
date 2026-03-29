@@ -45,7 +45,7 @@ public class RegisterDriverCommandHandler : IRequestHandler<RegisterDriverComman
             {
                 var error = identityResult.Errors.FirstOrDefault()?.Description ?? "Error creating user";
                 await transaction.RollbackAsync(cancellationToken);
-                return Result<DriverDto>.Failure(error);
+                return Result<DriverDto>.Failure(error, ErrorType.Validation);
             }
 
             // ensure role exists and assign
@@ -71,7 +71,7 @@ public class RegisterDriverCommandHandler : IRequestHandler<RegisterDriverComman
         catch (Exception)
         {
             try { await transaction.RollbackAsync(cancellationToken); } catch { }
-            return Result<DriverDto>.Failure("Critical error while registering driver.");
+            return Result<DriverDto>.Failure("Critical error while registering driver.", ErrorType.Conflict);
         }
     }
 }

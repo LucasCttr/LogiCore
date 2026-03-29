@@ -26,12 +26,12 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         // Business validation: ensure tracking number is unique
         if (await _packageRepository.ExistsByTrackingNumberAsync(request.TrackingNumber))
         {
-            return Result<PackageDto>.Failure("A package with the same tracking number already exists.");
+            return Result<PackageDto>.Failure("A package with the same tracking number already exists.", ErrorType.Conflict);
         }
 
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
-            return Result<PackageDto>.Failure("Unauthorized");
+            return Result<PackageDto>.Failure("Unauthorized", ErrorType.Unauthorized);
 
         var recipient = Recipient.Create(request.RecipientName,
             request.RecipientAddress,
