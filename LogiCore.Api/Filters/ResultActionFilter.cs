@@ -22,19 +22,26 @@ public class ResultActionFilter : IAsyncActionFilter
             objResult.Value is Application.Common.Models.IResult result &&
             !result.IsSuccess)
         {
-            var isNotFound = result.Error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true;
+            var status = result.Type switch
+            {
+                ErrorType.NotFound => StatusCodes.Status404NotFound,
+                ErrorType.Conflict => StatusCodes.Status409Conflict,
+                ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
+                ErrorType.Validation => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status400BadRequest
+            };
 
-            var validationProblem = new ValidationProblemDetails(new Dictionary<string, string[]>
+            var problem = new ValidationProblemDetails(new Dictionary<string, string[]>
         {
             { "Logic", new[] { result.Error ?? "Business error occurred." } }
         })
             {
                 Instance = context.HttpContext.Request.Path,
-                Title = "One or more validation errors occurred.",
-                Status = isNotFound ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest
+                Title = "A business logic error occurred.",
+                Status = status
             };
 
-            executed.Result = new ObjectResult(validationProblem) { StatusCode = validationProblem.Status };
+            executed.Result = new ObjectResult(problem) { StatusCode = status };
         }
     }
 }

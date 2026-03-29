@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using MediatR;
 using LogiCore.Application.Features.Driver.Register;
 using LogiCore.Application.Features.Driver.GetAll;
@@ -10,6 +13,7 @@ namespace LogiCore.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DriversController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,7 +23,8 @@ public class DriversController : ControllerBase
         _mediator = mediator;
     }
 
-    // POST: api/drivers/register
+    // POST: api/drivers/register (Admin only)
+    [Authorize(Roles = "Admin")]
     [HttpPost("register")]
     public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> Register([FromBody] RegisterDriverCommand request)
     {
@@ -27,7 +32,8 @@ public class DriversController : ControllerBase
         return result;
     }
 
-    // GET: api/drivers
+    // GET: api/drivers (Admin only)
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<ActionResult<Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAll()
     {
@@ -40,6 +46,31 @@ public class DriversController : ControllerBase
     public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetDriverByIdQuery(id));
+        if (result == null) return NotFound();
+        if (!result.IsSuccess) return result;
+
+        var driver = result.Value;
+
+        // allow admins
+        if (User.IsInRole("Admin")) return result;
+
+        // otherwise allow only the driver who owns this profile
+        var currentUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(currentUserId) || !string.Equals(driver.ApplicationUserId ?? string.Empty, currentUserId, StringComparison.Ordinal))
+            return Forbid();
+
+        return result;
+    }
+
+    // GET: api/drivers/me
+    [Authorize(Roles = "Driver")]
+    [HttpGet("me")]
+    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> GetMyProfile()
+    {
+        var currentUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var result = await _mediator.Send(new LogiCore.Application.Features.Driver.GetByUser.GetDriverByUserQuery(currentUserId));
         return result;
     }
 
@@ -47,6 +78,16 @@ public class DriversController : ControllerBase
     [HttpPut("{id:guid}/status")]
     public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> UpdateStatus(Guid id, [FromBody] UpdateDriverStatusCommand request)
     {
+        // authorize: admins can update any driver; drivers can only update their own status
+        var getResult = await _mediator.Send(new GetDriverByIdQuery(id));
+        if (getResult == null) return NotFound();
+        if (!getResult.IsSuccess) return getResult;
+
+        var driver = getResult.Value!;
+        var currentUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!User.IsInRole("Admin") && (string.IsNullOrEmpty(currentUserId) || !string.Equals(driver.ApplicationUserId ?? string.Empty, currentUserId, StringComparison.Ordinal)))
+            return Forbid();
+
         request.DriverId = id;
         var result = await _mediator.Send(request);
         return result;

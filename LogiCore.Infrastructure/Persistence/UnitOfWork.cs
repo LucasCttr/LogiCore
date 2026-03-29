@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using MediatR;
 using LogiCore.Domain.Common;
+using Microsoft.EntityFrameworkCore.Storage;
+using System;
 
 namespace LogiCore.Infrastructure.Persistence;
 
@@ -18,9 +20,28 @@ public class UnitOfWork : IUnitOfWork
         _mediator = mediator;
     }
 
+    private class EfUnitOfWorkTransaction : IUnitOfWorkTransaction
+    {
+        private readonly IDbContextTransaction _tx;
+
+        public EfUnitOfWorkTransaction(IDbContextTransaction tx) => _tx = tx;
+
+        public Task CommitAsync(CancellationToken cancellationToken = default) => _tx.CommitAsync(cancellationToken);
+
+        public Task RollbackAsync(CancellationToken cancellationToken = default) => _tx.RollbackAsync(cancellationToken);
+
+        public ValueTask DisposeAsync() => _tx.DisposeAsync();
+    }
+
     public Task<int> CommitAsync(CancellationToken cancellationToken = default)
     {
         return CommitWithDomainEventsAsync(cancellationToken);
+    }
+
+    public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        return new EfUnitOfWorkTransaction(tx);
     }
 
     private async Task<int> CommitWithDomainEventsAsync(CancellationToken cancellationToken)

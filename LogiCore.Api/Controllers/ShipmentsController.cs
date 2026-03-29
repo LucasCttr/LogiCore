@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using LogiCore.Application.Features.Shipment.CreateShipment;
 using LogiCore.Application.Features.Shipment.GetById;
@@ -13,6 +14,7 @@ namespace LogiCore.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ShipmentsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,7 +24,8 @@ public class ShipmentsController : ControllerBase
         _mediator = mediator;
     }
 
-    // POST: api/shipments
+    // POST: api/shipments (Admin only)
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<Result<ShipmentDto>>> Create([FromBody] CreateShipmentCommand request)
     {
@@ -56,7 +59,8 @@ public class ShipmentsController : ControllerBase
         return result;
     }
 
-    // POST: api/shipments/{id}/dispatch
+    // POST: api/shipments/{id}/dispatch (Admin only)
+    [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/dispatch")]
     public async Task<ActionResult<Result<bool>>> Dispatch(Guid id)
     {

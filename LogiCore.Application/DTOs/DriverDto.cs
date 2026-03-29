@@ -8,4 +8,5 @@ public class DriverDto
     public string Name { get; set; } = null!;
     public string LicenseNumber { get; set; } = null!;
     public bool IsActive { get; set; }
+    public string? ApplicationUserId { get; set; }
 }
