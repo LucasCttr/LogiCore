@@ -279,3 +279,86 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD "CreatedAt" timestamp with time zone NOT NULL DEFAULT TIMESTAMPTZ '-infinity';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD "DeliveredAt" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD "DriverId" uuid;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD "EstimatedDelivery" timestamp with time zone NOT NULL DEFAULT TIMESTAMPTZ '-infinity';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD "ShippedAt" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    CREATE TABLE "Drivers" (
+        "Id" uuid NOT NULL,
+        "Name" text NOT NULL,
+        "LicenseNumber" text NOT NULL,
+        "IsActive" boolean NOT NULL,
+        "ApplicationUserId" text NOT NULL,
+        CONSTRAINT "PK_Drivers" PRIMARY KEY ("Id"),
+        CONSTRAINT "FK_Drivers_AspNetUsers_ApplicationUserId" FOREIGN KEY ("ApplicationUserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    CREATE INDEX "IX_Shipments_DriverId" ON "Shipments" ("DriverId");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    CREATE INDEX "IX_Drivers_ApplicationUserId" ON "Drivers" ("ApplicationUserId");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    ALTER TABLE "Shipments" ADD CONSTRAINT "FK_Shipments_Drivers_DriverId" FOREIGN KEY ("DriverId") REFERENCES "Drivers" ("Id");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260329214703_AddShipmentDates') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260329214703_AddShipmentDates', '8.0.0');
+    END IF;
+END $EF$;
+COMMIT;
+
