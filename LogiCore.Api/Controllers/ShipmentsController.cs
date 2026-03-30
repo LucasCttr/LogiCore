@@ -16,6 +16,7 @@ using LogiCore.Application.Features.Shipment.GetByDriver;
 using LogiCore.Application.Features.Shipment.ArriveShipment;
 using LogiCore.Application.Features.Shipment.CompleteShipment;
 using LogiCore.Application.Features.Shipment.CancelShipment;
+using LogiCore.Application.Features.Shipment.GetPaged;
 
 namespace LogiCore.Api.Controllers;
 
@@ -40,12 +41,12 @@ public class ShipmentsController : ControllerBase
         return result;
     }
 
-    // GET: api/shipments (Admin only)
+    // GET: api/shipments (Admin only) - supports paging, sorting and filtering via query params
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetAll()
+    public async Task<ActionResult<Result<PagedResultDto<ShipmentDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? sortBy = null, [FromQuery] string? sortDir = null, [FromQuery] string? status = null, [FromQuery] string? q = null)
     {
-        var result = await _mediator.Send(new GetAllShipmentsQuery());
+        var result = await _mediator.Send(new GetShipmentsQuery(page, pageSize, sortBy, sortDir, status, q));
         return result;
     }
 
