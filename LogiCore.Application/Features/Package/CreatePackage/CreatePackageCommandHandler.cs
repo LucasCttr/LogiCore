@@ -32,17 +32,32 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
             return Result<PackageDto>.Failure("Unauthorized", ErrorType.Unauthorized);
+        // Build recipient from provided fields. If legacy recipient fields are missing, use Destination as address.
+        var recipientName = string.IsNullOrWhiteSpace(request.RecipientName) ? "Unknown" : request.RecipientName!;
+        var recipientAddress = !string.IsNullOrWhiteSpace(request.RecipientAddress) ? request.RecipientAddress! : (request.Destination ?? string.Empty);
+        var recipientPhone = request.RecipientPhone ?? string.Empty;
+        var recipientFloor = request.RecipientFloorApartment;
+        var recipientCity = request.RecipientCity ?? string.Empty;
+        var recipientProvince = request.RecipientProvince ?? string.Empty;
+        var recipientPostal = request.RecipientPostalCode ?? string.Empty;
+        var recipientDni = request.RecipientDni ?? string.Empty;
 
-        var recipient = Recipient.Create(request.RecipientName,
-            request.RecipientAddress,
-            request.RecipientPhone,
-            request.RecipientFloorApartment,
-            request.RecipientCity,
-            request.RecipientProvince,
-            request.RecipientPostalCode,
-            request.RecipientDni);
-        var dims = Dimensions.Create(request.LengthCm, request.WidthCm, request.HeightCm);
-        var package = Domain.Entities.Package.Create(request.TrackingNumber, recipient, request.Weight, userId, dims);
+        var recipient = Recipient.Create(recipientName, recipientAddress, recipientPhone, recipientFloor, recipientCity, recipientProvince, recipientPostal, recipientDni);
+
+        // Dimensions: use provided values if present and valid, otherwise use small default dimensions.
+        LogiCore.Domain.ValueObjects.Dimensions dims;
+        if (request.LengthCm.HasValue && request.WidthCm.HasValue && request.HeightCm.HasValue
+            && request.LengthCm.Value > 0 && request.WidthCm.Value > 0 && request.HeightCm.Value > 0)
+        {
+            dims = LogiCore.Domain.ValueObjects.Dimensions.Create(request.LengthCm.Value, request.WidthCm.Value, request.HeightCm.Value);
+        }
+        else
+        {
+            dims = LogiCore.Domain.ValueObjects.Dimensions.Create(1m, 1m, 1m);
+        }
+
+        var weight = request.Weight.HasValue && request.Weight.Value > 0 ? request.Weight.Value : 0.1m;
+        var package = Domain.Entities.Package.Create(request.TrackingNumber ?? string.Empty, recipient, weight, userId, dims);
         var added = await _packageRepository.AddAsync(package);
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
         return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));

@@ -12,19 +12,20 @@ public class SqlDriverRepository : IDriverRepository
     public SqlDriverRepository(LogiCoreDbContext context) => _context = context;
 
     public async Task<Driver?> GetByIdAsync(Guid id) =>
-        await _context.Set<Driver>().Include(d => d.Shipments).FirstOrDefaultAsync(d => d.Id == id);
+        await _context.Set<Driver>().Include(d => d.Shipments).Include(d => d.ApplicationUser).FirstOrDefaultAsync(d => d.Id == id);
 
     public async Task<Driver?> GetByApplicationUserIdAsync(string applicationUserId) =>
-        await _context.Set<Driver>().Include(d => d.Shipments).FirstOrDefaultAsync(d => d.ApplicationUserId == applicationUserId);
+        await _context.Set<Driver>().Include(d => d.Shipments).Include(d => d.ApplicationUser).FirstOrDefaultAsync(d => d.ApplicationUserId == applicationUserId);
 
     public async Task<IEnumerable<Driver>> GetAllAsync() =>
-        await _context.Set<Driver>().AsNoTracking().ToListAsync();
+        await _context.Set<Driver>().AsNoTracking().Include(d => d.ApplicationUser).ToListAsync();
 
     public async Task<IEnumerable<Driver>> GetAvailableAsync()
     {
         return await _context.Set<Driver>()
             .AsNoTracking()
             .Include(d => d.Shipments)
+            .Include(d => d.ApplicationUser)
             .Where(d => d.IsActive && !d.Shipments.Any())
             .ToListAsync();
     }

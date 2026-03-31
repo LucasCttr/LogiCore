@@ -37,7 +37,8 @@ public class RegisterDriverCommandHandler : IRequestHandler<RegisterDriverComman
                 UserName = request.Email,
                 Email = request.Email,
                 FirstName = request.FirstName,
-                LastName = request.LastName
+                LastName = request.LastName,
+                PhoneNumber = request.Phone
             };
 
             var identityResult = await _userManager.CreateAsync(user, request.Password);

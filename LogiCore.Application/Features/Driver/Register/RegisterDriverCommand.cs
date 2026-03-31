@@ -13,4 +13,5 @@ public class RegisterDriverCommand : IRequest<Result<DriverDto>>
 
     // Driver-specific
     public string LicenseNumber { get; set; } = null!;
+    public string Phone { get; set; } = null!;
 }

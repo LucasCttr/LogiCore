@@ -43,25 +43,25 @@ public sealed class Recipient
         string postalCode, 
         string dni)
     {
-        // Validations
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("El nombre es obligatorio.");
-        if (string.IsNullOrWhiteSpace(address)) throw new DomainException("La dirección es obligatoria.");
-        if (string.IsNullOrWhiteSpace(phone)) throw new DomainException("El teléfono es obligatorio para la entrega.");
-        if (string.IsNullOrWhiteSpace(city)) throw new DomainException("La ciudad es obligatoria para el ruteo.");
-        if (string.IsNullOrWhiteSpace(province)) throw new DomainException("La provincia es obligatoria.");
-        if (string.IsNullOrWhiteSpace(postalCode)) throw new DomainException("El código postal es crítico para las estadísticas.");
-        if (string.IsNullOrWhiteSpace(dni)) throw new DomainException("El DNI es obligatorio para el seguro del paquete.");
+        // Relaxed validations: allow creation with partial data (frontend may provide only address strings).
+        var finalName = string.IsNullOrWhiteSpace(name) ? "Unknown" : name.Trim();
+        var finalAddress = string.IsNullOrWhiteSpace(address) ? string.Empty : address.Trim();
+        var finalPhone = string.IsNullOrWhiteSpace(phone) ? string.Empty : phone.Trim();
+        var finalCity = string.IsNullOrWhiteSpace(city) ? string.Empty : city.Trim();
+        var finalProvince = string.IsNullOrWhiteSpace(province) ? string.Empty : province.Trim();
+        var finalPostalCode = string.IsNullOrWhiteSpace(postalCode) ? string.Empty : postalCode.Trim();
+        var finalDni = string.IsNullOrWhiteSpace(dni) ? string.Empty : dni.Trim();
+        var finalFloor = string.IsNullOrWhiteSpace(floorApartment) ? null : floorApartment.Trim();
 
-        // Cleaning (trim)
         return new Recipient(
-            name.Trim(),
-            address.Trim(),
-            phone.Trim(),
-            city.Trim(),
-            province.Trim(),
-            postalCode.Trim(),
-            dni.Trim(),
-            string.IsNullOrWhiteSpace(floorApartment) ? null : floorApartment.Trim()
+            finalName,
+            finalAddress,
+            finalPhone,
+            finalCity,
+            finalProvince,
+            finalPostalCode,
+            finalDni,
+            finalFloor
         );
     }
 }
