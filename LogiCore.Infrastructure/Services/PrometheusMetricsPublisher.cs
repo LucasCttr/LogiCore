@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using LogiCore.Application.Common.Interfaces;
 using Prometheus;
 
@@ -15,7 +16,7 @@ namespace LogiCore.Infrastructure.Services
     /// </summary>
     public class PrometheusMetricsPublisher : BackgroundService
     {
-        private readonly IMetricsService _metricsService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly TimeSpan _interval;
 
         private readonly Gauge _totalPackagesGauge;
@@ -25,9 +26,9 @@ namespace LogiCore.Infrastructure.Services
         private readonly Gauge _canceledPackagesGauge;
         private readonly Gauge _avgDispatchToDeliveryMinutesGauge;
 
-        public PrometheusMetricsPublisher(IMetricsService metricsService, IConfiguration configuration)
+        public PrometheusMetricsPublisher(IServiceProvider serviceProvider, IConfiguration configuration)
         {
-            _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             var seconds = 30;
             if (int.TryParse(configuration["Metrics:PublishIntervalSeconds"], out var s) && s > 0)
@@ -49,19 +50,25 @@ namespace LogiCore.Infrastructure.Services
             {
                 try
                 {
-                    var overview = await _metricsService.GetOverviewAsync();
+                            // Resolve a scoped IMetricsService for each iteration to avoid consuming scoped service from singleton
+                            using var scope = _serviceProvider.CreateScope();
+                            var metricsService = scope.ServiceProvider.GetService<IMetricsService>();
+                            if (metricsService != null)
+                            {
+                                var overview = await metricsService.GetOverviewAsync();
 
-                    if (overview != null)
-                    {
-                        if (overview.TryGetValue("totalPackages", out var tp)) _totalPackagesGauge.Set(ToDouble(tp));
-                        if (overview.TryGetValue("totalShipments", out var ts)) _totalShipmentsGauge.Set(ToDouble(ts));
-                        if (overview.TryGetValue("delivered", out var d)) _deliveredPackagesGauge.Set(ToDouble(d));
-                        if (overview.TryGetValue("inTransit", out var it)) _inTransitPackagesGauge.Set(ToDouble(it));
-                        if (overview.TryGetValue("canceled", out var c)) _canceledPackagesGauge.Set(ToDouble(c));
-                    }
+                                if (overview != null)
+                                {
+                                    if (overview.TryGetValue("totalPackages", out var tp)) _totalPackagesGauge.Set(ToDouble(tp));
+                                    if (overview.TryGetValue("totalShipments", out var ts)) _totalShipmentsGauge.Set(ToDouble(ts));
+                                    if (overview.TryGetValue("delivered", out var d)) _deliveredPackagesGauge.Set(ToDouble(d));
+                                    if (overview.TryGetValue("inTransit", out var it)) _inTransitPackagesGauge.Set(ToDouble(it));
+                                    if (overview.TryGetValue("canceled", out var c)) _canceledPackagesGauge.Set(ToDouble(c));
+                                }
 
-                    var avg = await _metricsService.GetAverageDispatchToDeliveryAsync();
-                    if (avg.HasValue) _avgDispatchToDeliveryMinutesGauge.Set(avg.Value.TotalMinutes);
+                                var avg = await metricsService.GetAverageDispatchToDeliveryAsync();
+                                if (avg.HasValue) _avgDispatchToDeliveryMinutesGauge.Set(avg.Value.TotalMinutes);
+                            }
 
                 }
                 catch (Exception ex)

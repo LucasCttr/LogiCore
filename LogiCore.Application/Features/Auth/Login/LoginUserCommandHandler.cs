@@ -35,7 +35,11 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
         if (!passwordValid)
             return Result<AuthResponseDto>.Failure("Invalid credentials");
 
-        var tokenString = _jwtProvider.CreateToken(user.Id, user.Email ?? string.Empty);
+        // Include user roles in token so role-based authorization works
+        var roles = await _userManager.GetRolesAsync(user);
+        var additionalClaims = roles.Select(r => new KeyValuePair<string, string>(ClaimTypes.Role, r));
+
+        var tokenString = _jwtProvider.CreateToken(user.Id, user.Email ?? string.Empty, additionalClaims);
 
         var userDto = _mapper.Map<UserDto>(user);
         var authResponse = new AuthResponseDto(tokenString, userDto);
