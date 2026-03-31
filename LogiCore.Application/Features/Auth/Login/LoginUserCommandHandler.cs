@@ -17,12 +17,14 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IMapper _mapper;
     private readonly LogiCore.Application.Common.Interfaces.Security.IJwtProvider _jwtProvider;
+    private readonly LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService _refreshTokenService;
 
-    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper, LogiCore.Application.Common.Interfaces.Security.IJwtProvider jwtProvider)
+    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper, LogiCore.Application.Common.Interfaces.Security.IJwtProvider jwtProvider, LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService refreshTokenService)
     {
         _userManager = userManager;
         _mapper = mapper;
         _jwtProvider = jwtProvider;
+        _refreshTokenService = refreshTokenService;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
@@ -41,8 +43,11 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         var tokenString = _jwtProvider.CreateToken(user.Id, user.Email ?? string.Empty, additionalClaims);
 
+        // create a refresh token persisted in DB
+        var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+
         var userDto = _mapper.Map<UserDto>(user);
-        var authResponse = new AuthResponseDto(tokenString, userDto);
+        var authResponse = new AuthResponseDto(tokenString, userDto, refreshToken);
         return Result<AuthResponseDto>.Success(authResponse);
     }
 }

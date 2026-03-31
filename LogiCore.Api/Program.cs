@@ -121,6 +121,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSingleton<LogiCore.Application.Common.Interfaces.Security.IJwtProvider, LogiCore.Infrastructure.Security.JwtProvider>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.Security.ICurrentUserService, LogiCore.Infrastructure.Security.CurrentUserService>();
+// Refresh token service (persists refresh tokens)
+builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService, LogiCore.Infrastructure.Security.RefreshTokenService>();
 
 // --- 5. MediatR & Validation ---
 builder.Services.AddMediatR(typeof(CreatePackageCommandHandler).Assembly);
