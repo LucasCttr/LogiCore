@@ -34,6 +34,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCommandHandler).Assembly);
 
+// --- CORS ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalFront", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 // --- Persistence ---
 string? databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 string? connectionString = null;
@@ -139,9 +152,68 @@ app.UseSerilogRequestLogging();
 app.UseHttpMetrics();
 app.MapMetrics();
 
+app.UseCors("AllowLocalFront");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// --- Seed admin user (development convenience) ---
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        const string adminEmail = "admin@gmail.com";
+        // Must respect Identity password policy (RequiredLength = 6)
+        const string adminPassword = "admin123";
+        const string adminRole = "Admin";
+
+        if (!roleManager.RoleExistsAsync(adminRole).GetAwaiter().GetResult())
+        {
+            roleManager.CreateAsync(new IdentityRole(adminRole)).GetAwaiter().GetResult();
+        }
+
+        var adminUser = userManager.FindByEmailAsync(adminEmail).GetAwaiter().GetResult();
+        if (adminUser == null)
+        {
+            adminUser = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true,
+                FirstName = "Admin",
+                LastName = "User",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createResult = userManager.CreateAsync(adminUser, adminPassword).GetAwaiter().GetResult();
+            if (createResult.Succeeded)
+            {
+                userManager.AddToRoleAsync(adminUser, adminRole).GetAwaiter().GetResult();
+                Log.Logger?.Information("Seeded admin user {Email}", adminEmail);
+            }
+            else
+            {
+                var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                Log.Logger?.Warning("Failed to seed admin user {Email}: {Errors}", adminEmail, errors);
+            }
+        }
+        else
+        {
+            if (!userManager.IsInRoleAsync(adminUser, adminRole).GetAwaiter().GetResult())
+            {
+                userManager.AddToRoleAsync(adminUser, adminRole).GetAwaiter().GetResult();
+            }
+        }
+    }
+}
+catch (Exception ex)
+{
+    Log.Logger?.Error(ex, "Seeding admin user failed");
+}
 
 app.Run();
