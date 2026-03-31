@@ -13,5 +13,24 @@ services:
     volumes:
       - mssql-data:/var/opt/mssql
 
+  postgres:
+    image: postgres:15
+    container_name: logicore-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "logicore_dev"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mssql-data:
+  pg-data:
