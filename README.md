@@ -3,7 +3,7 @@
 ## Descripción
 - **Propósito**: Proyecto de ejemplo para fines de aprendizaje y práctica de arquitectura limpia, APIs RESTful y buenas prácticas en .NET.
 - **Qué hace**: Implementa una API para gestionar conductores, vehículos, ubicaciones, paquetes y envíos con capas separadas para `Api`, `Application`, `Domain` e `Infrastructure`.
-- **Front en proceso:** https://github.com/LucasCttr/logicore-front
+- **Front en proceso:** [Next.js: https://github.com/LucasCttr/logicore-front]
 
 ## Arquitectura
 - **Patrón**: Clean Architecture / Onion — separa responsabilidades en proyectos `LogiCore.Api`, `LogiCore.Application`, `LogiCore.Domain` y `LogiCore.Infrastructure`.
