@@ -8,6 +8,7 @@ namespace LogiCore.Application.Services
     {
         Task<IEnumerable<string>> GetSuggestionsAsync(string prefix, int limit = 5);
         Task RecordSelectionAsync(string address);
+        Task AddAddressAsync(string address);
     }
 
     public class AddressAutocompleteService : IAddressAutocompleteService
@@ -31,6 +32,12 @@ namespace LogiCore.Application.Services
         {
             if (string.IsNullOrWhiteSpace(address)) return Task.CompletedTask;
             return _repo.IncrementScoreAsync(address.Trim(), 1);
+        }
+
+        public Task AddAddressAsync(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address)) return Task.CompletedTask;
+            return _repo.AddAddressAsync(address.Trim());
         }
     }
 }

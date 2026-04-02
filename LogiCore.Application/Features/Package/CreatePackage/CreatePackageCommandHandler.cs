@@ -13,12 +13,14 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
     private readonly IPackageRepository _packageRepository;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly LogiCore.Application.Services.IAddressAutocompleteService _autocompleteService;
 
-    public CreatePackageCommandHandler(IPackageRepository packageRepository, IMapper mapper, ICurrentUserService currentUserService)
+    public CreatePackageCommandHandler(IPackageRepository packageRepository, IMapper mapper, ICurrentUserService currentUserService, LogiCore.Application.Services.IAddressAutocompleteService autocompleteService)
     {
         _packageRepository = packageRepository;
         _mapper = mapper;
         _currentUserService = currentUserService;
+        _autocompleteService = autocompleteService;
     }
 
     public async Task<Result<PackageDto>> Handle(CreatePackageCommand request, CancellationToken cancellationToken)
@@ -59,6 +61,13 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         var weight = request.Weight.HasValue && request.Weight.Value > 0 ? request.Weight.Value : 0.1m;
         var package = Domain.Entities.Package.Create(request.TrackingNumber ?? string.Empty, recipient, weight, userId, dims);
         var added = await _packageRepository.AddAsync(package);
+        // Also register this address with the autocomplete service so it appears in suggestions
+        if (!string.IsNullOrWhiteSpace(recipientAddress))
+        {
+            await _autocompleteService.AddAddressAsync(recipientAddress);
+            await _autocompleteService.RecordSelectionAsync(recipientAddress);
+        }
+
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
         return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));
     }

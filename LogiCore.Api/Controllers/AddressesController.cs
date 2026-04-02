@@ -10,10 +10,12 @@ namespace LogiCore.Api.Controllers
     public class AddressesController : ControllerBase
     {
         private readonly IAddressAutocompleteService _service;
+        private readonly LogiCore.Application.Common.Interfaces.IAddressAutocompleteRepository _repo;
 
-        public AddressesController(IAddressAutocompleteService service)
+        public AddressesController(IAddressAutocompleteService service, LogiCore.Application.Common.Interfaces.IAddressAutocompleteRepository repo)
         {
             _service = service;
+            _repo = repo;
         }
 
         [HttpGet("autocomplete")]
@@ -30,6 +32,15 @@ namespace LogiCore.Api.Controllers
             if (dto == null || string.IsNullOrWhiteSpace(dto.Address)) return BadRequest();
             await _service.RecordSelectionAsync(dto.Address);
             return NoContent();
+        }
+
+        // Development helper: seed Redis with a list of addresses
+        [HttpPost("seed")]
+        public async Task<IActionResult> Seed([FromBody] IEnumerable<string> addresses)
+        {
+            if (addresses == null) return BadRequest();
+            await _repo.SeedAsync(addresses);
+            return Ok(new { count = addresses.Count() });
         }
     }
 }
