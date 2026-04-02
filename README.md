@@ -3,6 +3,7 @@
 ## Descripción
 - **Propósito**: Proyecto de ejemplo para fines de aprendizaje y práctica de arquitectura limpia, APIs RESTful y buenas prácticas en .NET.
 - **Qué hace**: Implementa una API para gestionar conductores, vehículos, ubicaciones, paquetes y envíos con capas separadas para `Api`, `Application`, `Domain` e `Infrastructure`.
+- **Front en proceso:** https://github.com/LucasCttr/logicore-front
 
 ## Arquitectura
 - **Patrón**: Clean Architecture / Onion — separa responsabilidades en proyectos `LogiCore.Api`, `LogiCore.Application`, `LogiCore.Domain` y `LogiCore.Infrastructure`.
@@ -95,7 +96,8 @@ docker-compose up --build
 - Contiene `Dockerfile` y `docker-compose.yml` para empaquetado. También hay un `publish/` con artefactos preparados.
 - Hay un archivo `migrations.sql` que puede ayudar en entornos donde no se aplican migraciones automáticas.
 
-## Sugerencias y próximos pasos (para aprendizaje)
+## Próximos pasos
+- Finalizar frontend.
 - Implementacion de rutas optimas mediante heurísticas.
 - Añadir pruebas unitarias e integración (xUnit / NUnit + Testcontainers para DB).
 - Integrar pipeline CI (GitHub Actions) que ejecute `dotnet build`, `dotnet test` y análisis estático.
