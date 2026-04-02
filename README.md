@@ -45,6 +45,33 @@
 - **Patrón CQRS parcial**: separación de comandos y consultas vía `MediatR` cuando aplica.
 - **Uso de migraciones**: gestionarlas con EF Core para evolucionar el esquema de PostgreSQL.
 
+
+## Patrones implementados
+A continuación se detallan los patrones estructurales y de diseño aplicados en el proyecto, con ejemplos y enlaces a implementaciones relevantes dentro del repo.
+
+- **Repository (Repositorio)**: contratos en la capa de dominio y adaptadores en `Infrastructure` para acceso a datos. Ejemplos: [LogiCore.Domain/Repositories/IPackageRepository.cs](LogiCore.Domain/Repositories/IPackageRepository.cs#L1) y la implementación registrada en [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L70).
+
+- **Unit of Work**: centraliza commits y transacciones, garantizando coherencia y publicando eventos de dominio antes de persistir cambios. Implementación: [LogiCore.Infrastructure/Persistence/UnitOfWork.cs](LogiCore.Infrastructure/Persistence/UnitOfWork.cs#L1).
+
+- **Domain Events / Event Dispatcher**: entidades que emiten eventos de dominio y handlers desacoplados (publicados vía MediatR). Interfaz: [LogiCore.Domain/Common/Interfaces/IDomainEvent.cs](LogiCore.Domain/Common/Interfaces/IDomainEvent.cs#L1). Handlers de ejemplo: [LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs](LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs#L1).
+
+- **Mediator / CQRS (parcial)**: uso de MediatR para comandos y consultas; desacopla controladores de la lógica de aplicación y facilita pruebas. Registro y uso: [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L127) y controllers (ej. [LogiCore.Api/Controllers/PackagesController.cs](LogiCore.Api/Controllers/PackagesController.cs#L1)).
+
+- **Pipeline Behaviors (MediatR)**: comportamientos en la pipeline para validación y acciones transversales (ej. commit). Implementaciones: [LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs](LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs#L1) y [LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs](LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs#L1).
+
+- **Validation Pipeline**: `FluentValidation` integrado como paso de la pipeline para asegurar entrada válida antes de ejecutar la lógica.
+
+- **Mapper (Adapter)**: `AutoMapper` profiles para transformar entidades a DTOs y viceversa; ejemplo: [LogiCore.Application/Mappers/DriverProfile.cs](LogiCore.Application/Mappers/DriverProfile.cs#L1).
+
+- **Middleware Pipeline / Global Exception Handling**: middleware centralizado que transforma excepciones en `ProblemDetails` y mapea códigos HTTP uniformemente. Ver: [LogiCore.Api/Middlewares/GlobalExceptionHandler.cs](LogiCore.Api/Middlewares/GlobalExceptionHandler.cs#L1).
+
+- **Action Filters**: filtros de acción para estandarizar respuestas y comportamientos cross-cutting. Ejemplo: [LogiCore.Api/Filters/ResultActionFilter.cs](LogiCore.Api/Filters/ResultActionFilter.cs#L1).
+
+- **Observer / Instrumentation**: servicios y adaptadores para métricas (Prometheus) y observabilidad, por ejemplo [LogiCore.Infrastructure/Services/DatabaseMetricsService.cs](LogiCore.Infrastructure/Services/DatabaseMetricsService.cs#L1).
+
+- **Adapter / Abstraction for External Concerns**: interfaces en `Application` con implementaciones en `Infrastructure` (repositorios, servicios externos, current user service), registrados en DI en [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L67-L75), lo que facilita la sustitución y pruebas.
+
+
 ## Cómo ejecutar localmente
 1. Asegúrate de tener instalado `.NET 8 SDK`, `docker` y `docker-compose` (opcional para contenedores).
 2. Copia/ajusta la cadena de conexión en `LogiCore.Api/appsettings.Development.json`.
@@ -73,4 +100,6 @@ docker-compose up --build
 - Añadir pruebas unitarias e integración (xUnit / NUnit + Testcontainers para DB).
 - Integrar pipeline CI (GitHub Actions) que ejecute `dotnet build`, `dotnet test` y análisis estático.
 - Añadir políticas de seguridad: headers, rate limiting y pruebas de endpoints.
+
+
 
