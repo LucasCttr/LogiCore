@@ -102,6 +102,12 @@ docker-compose up --build
 - Añadir pruebas unitarias e integración (xUnit / NUnit + Testcontainers para DB).
 - Integrar pipeline CI (GitHub Actions) que ejecute `dotnet build`, `dotnet test` y análisis estático.
 - Añadir políticas de seguridad: headers, rate limiting y pruebas de endpoints.
+ 
+## Redis — Autocomplete de direcciones
 
+- **Qué hace**: Redis se usa como ZSET lexicográfico para autocompletar direcciones frecuentes.
+- **Endpoint**: `GET /api/addresses/autocomplete?q=Av.%20Riv` devuelve hasta 5 sugerencias.
+- **Cómo semilla**: al iniciar en desarrollo el servicio lee `Locations` y carga direcciones en la ZSET `addresses:zset`.
+- **Despliegue**: `docker-compose.yml` incluye un servicio `redis` (puerto 6379).
 
 

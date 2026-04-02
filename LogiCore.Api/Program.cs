@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using LogiCore.Infrastructure.Persistence;
+using StackExchange.Redis;
+using LogiCore.Infrastructure.Services.Redis;
+using LogiCore.Application.Services;
+using LogiCore.Application.Common.Interfaces;
 using LogiCore.Domain.Entities;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Infrastructure.Repositories;
@@ -81,6 +85,18 @@ builder.Services.AddTransient<LogiCore.Domain.Common.Interfaces.ICostCalculator,
 builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.IMetricsService, LogiCore.Infrastructure.Services.DatabaseMetricsService>();
 // Background publisher that exports business metrics as Prometheus Gauges
 builder.Services.AddHostedService<LogiCore.Infrastructure.Services.PrometheusMetricsPublisher>();
+
+// --- Redis autocomplete service ---
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var conn = builder.Configuration.GetValue<string>("Redis:Connection") ?? "localhost:6379";
+    return ConnectionMultiplexer.Connect(conn);
+});
+
+// Infrastructure implements repository interface defined in Application
+builder.Services.AddSingleton<IAddressAutocompleteRepository, RedisAddressAutocompleteService>();
+// Application service enforces business rules and is the dependency for controllers
+builder.Services.AddScoped<IAddressAutocompleteService, AddressAutocompleteService>();
 
 // --- Identity and Authentication ---
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -216,6 +232,27 @@ try
 catch (Exception ex)
 {
     Log.Logger?.Error(ex, "Seeding admin user failed");
+}
+
+// Seed addresses into Redis (development convenience)
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+            var redis = scope.ServiceProvider.GetService<LogiCore.Application.Common.Interfaces.IAddressAutocompleteRepository>();
+        var locationRepo = scope.ServiceProvider.GetService<LogiCore.Application.Common.Interfaces.Persistence.ILocationRepository>();
+        if (redis != null && locationRepo != null)
+        {
+            var locations = locationRepo.GetAllAsync().GetAwaiter().GetResult();
+            var addresses = locations.Select(l => string.Join(' ', new[] { l.AddressLine1, l.AddressLine2 ?? string.Empty, l.City, l.State ?? string.Empty, l.PostalCode }).Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).Distinct();
+            redis.SeedAsync(addresses).GetAwaiter().GetResult();
+            Log.Logger?.Information("Seeded {Count} addresses into Redis", addresses.Count());
+        }
+    }
+}
+catch (Exception ex)
+{
+    Log.Logger?.Warning(ex, "Seeding addresses into Redis failed");
 }
 
 app.Run();
