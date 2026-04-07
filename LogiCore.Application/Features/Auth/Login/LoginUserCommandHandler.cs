@@ -34,6 +34,10 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
     {
         _logger.LogInformation("Login attempt for Email='{Email}'", request?.Email ?? "(null)");
 
+        // defensive: ensure request and required fields are present to avoid NullReferenceException
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return Result<AuthResponseDto>.Failure("Invalid credentials");
+
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
             return Result<AuthResponseDto>.Failure("Invalid credentials");
