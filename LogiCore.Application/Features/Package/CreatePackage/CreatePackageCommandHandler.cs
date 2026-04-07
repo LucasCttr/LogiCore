@@ -59,13 +59,31 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         }
 
         var weight = request.Weight.HasValue && request.Weight.Value > 0 ? request.Weight.Value : 0.1m;
-        var package = Domain.Entities.Package.Create(request.TrackingNumber ?? string.Empty, recipient, weight, userId, dims);
+        var package = Domain.Entities.Package.Create(
+            request.TrackingNumber ?? string.Empty,
+            recipient,
+            weight,
+            userId,
+            dims,
+            request.Description,
+            request.InternalCode,
+            request.Origin,
+            request.Destination);
         var added = await _packageRepository.AddAsync(package);
         // Also register this address with the autocomplete service so it appears in suggestions
         if (!string.IsNullOrWhiteSpace(recipientAddress))
         {
-            await _autocompleteService.AddAddressAsync(recipientAddress);
             await _autocompleteService.RecordSelectionAsync(recipientAddress);
+        }
+        // Record origin/destination addresses in autocomplete so they appear in suggestions
+        if (!string.IsNullOrWhiteSpace(request.Origin))
+        {
+            await _autocompleteService.RecordSelectionAsync(request.Origin);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Destination))
+        {
+            await _autocompleteService.RecordSelectionAsync(request.Destination);
         }
 
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes

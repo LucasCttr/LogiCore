@@ -14,6 +14,10 @@ public class Package : IHasDomainEvents
     public string TrackingNumber { get; private set; } = null!;
     public Recipient Recipient { get; private set; } = null!;
     public decimal Weight { get; private set; }
+    public string? Description { get; private set; }
+    public string? InternalCode { get; private set; }
+    public string? OriginAddress { get; private set; }
+    public string? DestinationAddress { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     public PackageStatus Status { get; private set; }
@@ -24,7 +28,7 @@ public class Package : IHasDomainEvents
     // Navigation property (optional)
     public ApplicationUser? ApplicationUser { get; private set; }
 
-    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string? applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions)
+    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string? applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions, string? description = null, string? internalCode = null, string? originAddress = null, string? destinationAddress = null)
     {
         // Valdiations - Domain Exceptions
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
@@ -39,7 +43,11 @@ public class Package : IHasDomainEvents
             Weight = weight,
             CreatedAt = DateTime.UtcNow,
             ApplicationUserId = applicationUserId,
-            Status = PackageStatus.Pending
+            Status = PackageStatus.Pending,
+            Description = description,
+            InternalCode = internalCode,
+            OriginAddress = originAddress,
+            DestinationAddress = destinationAddress
         };
 
         package._dimensions = dimensions;

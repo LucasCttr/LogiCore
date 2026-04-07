@@ -8,6 +8,7 @@ public class CreatePackageCommand : IRequest<Result<PackageDto>>
     // Basic fields used by the simplified frontend
     public string TrackingNumber { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public string? InternalCode { get; init; }
     public decimal? Weight { get; init; }
 
     // Free-text origin/destination

@@ -9,6 +9,13 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
         RuleFor(x => x.TrackingNumber)
             .NotEmpty().WithMessage("TrackingNumber is required.")
             .MaximumLength(50);
+        RuleFor(x => x.Description)
+            .MaximumLength(500)
+            .When(x => !string.IsNullOrWhiteSpace(x.Description));
+
+        RuleFor(x => x.InternalCode)
+            .MaximumLength(100)
+            .When(x => !string.IsNullOrWhiteSpace(x.InternalCode));
         // Recipient fields are optional for the simplified frontend flow. If provided, apply basic constraints.
         RuleFor(x => x.RecipientName)
             .MaximumLength(200)

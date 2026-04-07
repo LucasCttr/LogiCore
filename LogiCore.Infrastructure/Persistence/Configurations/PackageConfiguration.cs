@@ -46,6 +46,18 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             .HasColumnType("decimal(10,2)") 
             .IsRequired();
 
+        builder.Property(e => e.Description)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.InternalCode)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.OriginAddress)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.DestinationAddress)
+            .HasMaxLength(500);
+
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 
