@@ -41,13 +41,41 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCom
 // --- CORS ---
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowLocalFront", policy =>
+    // Read allowed origins from environment variable ALLOWED_ORIGINS (comma separated)
+    var allowed = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
+    string[] origins = Array.Empty<string>();
+    if (!string.IsNullOrWhiteSpace(allowed))
     {
-        policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        origins = allowed.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        if (origins.Length == 0)
+        {
+            // Default to localhost during development
+            policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // If a wildcard '*' is provided, allow any origin (useful for quick testing only)
+            if (origins.Length == 1 && origins[0] == "*")
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+            else
+            {
+                policy.WithOrigins(origins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            }
+        }
     });
 });
 
@@ -170,7 +198,7 @@ app.UseSerilogRequestLogging();
 app.UseHttpMetrics();
 app.MapMetrics();
 
-app.UseCors("AllowLocalFront");
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
