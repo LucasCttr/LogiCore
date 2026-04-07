@@ -5,6 +5,7 @@ using LogiCore.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,17 +19,21 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
     private readonly IMapper _mapper;
     private readonly LogiCore.Application.Common.Interfaces.Security.IJwtProvider _jwtProvider;
     private readonly LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService _refreshTokenService;
+    private readonly Microsoft.Extensions.Logging.ILogger<LoginUserCommandHandler> _logger;
 
-    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper, LogiCore.Application.Common.Interfaces.Security.IJwtProvider jwtProvider, LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService refreshTokenService)
+    public LoginUserCommandHandler(UserManager<ApplicationUser> userManager, IMapper mapper, LogiCore.Application.Common.Interfaces.Security.IJwtProvider jwtProvider, LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService refreshTokenService, Microsoft.Extensions.Logging.ILogger<LoginUserCommandHandler> logger)
     {
         _userManager = userManager;
         _mapper = mapper;
         _jwtProvider = jwtProvider;
         _refreshTokenService = refreshTokenService;
+        _logger = logger;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Login attempt for Email='{Email}'", request?.Email ?? "(null)");
+
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
             return Result<AuthResponseDto>.Failure("Invalid credentials");
