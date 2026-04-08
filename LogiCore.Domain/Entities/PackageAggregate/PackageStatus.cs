@@ -6,4 +6,9 @@ public enum PackageStatus
     InTransit = 1,
     Delivered = 2,
     Canceled = 3
+    ,
+    AtDepot = 4,
+    DeliveredToCenter = 5
+    ,
+    Returned = 6
 }

@@ -66,4 +66,20 @@ public class SqlPackageRepository : IPackageRepository
         // Do not call SaveChanges here: commit is handled by UnitOfWork/SaveChangesBehavior
         return Task.FromResult(entry.Entity);
     }
+
+    public async Task<IEnumerable<Package>> GetManyByIdsAsync(IEnumerable<Guid> ids)
+    {
+        var idList = ids.ToList();
+        if (!idList.Any()) return Enumerable.Empty<Package>();
+
+        return await _context.Packages
+            .Where(p => idList.Contains(p.Id))
+            .ToListAsync();
+    }
+
+    public Task UpdateRangeAsync(IEnumerable<Package> packages)
+    {
+        _context.Packages.UpdateRange(packages);
+        return Task.CompletedTask;
+    }
 }

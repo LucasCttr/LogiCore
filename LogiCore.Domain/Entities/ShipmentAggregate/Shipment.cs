@@ -68,8 +68,8 @@ public class Shipment : IHasDomainEvents
     {
         if (package is null) throw new DomainException("Package cannot be null.");
 
-        if (package.Status != PackageStatus.Pending)
-            throw new DomainException("Only packages with Pending status can be added to a shipment.");
+        if (package.Status != PackageStatus.Pending && package.Status != PackageStatus.AtDepot)
+            throw new DomainException("Only packages with Pending or AtDepot status can be added to a shipment.");
 
         var weightCapacity = Vehicle?.MaxWeightCapacity ?? VehicleMaxWeightCapacity;
         if (GetCurrentWeight() + package.Weight > weightCapacity)

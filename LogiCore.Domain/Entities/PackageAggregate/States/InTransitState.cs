@@ -15,6 +15,12 @@ internal class InTransitState : PackageState
         package.SetStatus(PackageStatus.Delivered);
     }
 
+    public override void MoveToDepot(Package package)
+    {
+        // When a shipment arrives, packages in transit can be moved to depot
+        package.SetStatus(PackageStatus.AtDepot);
+    }
+
     public override void Cancel(Package package)
     {
         // If the package is in transit, it can still be canceled (e.g. if the customer calls to stop delivery)

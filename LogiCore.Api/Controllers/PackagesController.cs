@@ -76,6 +76,22 @@ public class PackagesController : ControllerBase
         return result;
     }
 
+    // POST: api/packages/bulk-depot (initial ingress)
+    [HttpPost("bulk-depot")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> BulkDepot([FromBody] BulkMoveToDepotCommand request)
+    {
+        var result = await _mediator.Send(request);
+        return result;
+    }
+        // POST: api/packages/bulk/cancel-or-return
+        [HttpPost("bulk/cancel-or-return")]
+        [Microsoft.AspNetCore.Authorization.Authorize]
+        public async Task<ActionResult<Result<bool>>> BulkCancelOrReturn([FromBody] BulkCancelPackagesCommand request)
+        {
+            var result = await _mediator.Send(request);
+            return result;
+        }
 
 
     // GET: api/packages/tracking/{trackingNumber} (public minimal history)

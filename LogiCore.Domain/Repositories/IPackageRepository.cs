@@ -16,5 +16,7 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
         Task<bool> ExistsByTrackingNumberAsync(string trackingNumber);
         Task<Package> AddAsync(Package package);
         Task<Package> UpdateAsync(Package package);
+        Task<IEnumerable<Package>> GetManyByIdsAsync(IEnumerable<Guid> ids);
+        Task UpdateRangeAsync(IEnumerable<Package> packages);
     }
 }

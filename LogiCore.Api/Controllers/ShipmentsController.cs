@@ -17,6 +17,8 @@ using LogiCore.Application.Features.Shipment.ArriveShipment;
 using LogiCore.Application.Features.Shipment.CompleteShipment;
 using LogiCore.Application.Features.Shipment.CancelShipment;
 using LogiCore.Application.Features.Shipment.GetPaged;
+using LogiCore.Application.Features.Packages;
+using LogiCore.Application.Features.Shipment;
 
 namespace LogiCore.Api.Controllers;
 
@@ -142,6 +144,26 @@ public class ShipmentsController : ControllerBase
 
         if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
 
+        var result = await _mediator.Send(new ArriveShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/packages/bulk (Admin only)
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id:guid}/packages/bulk")]
+    public async Task<ActionResult<Result<bool>>> BulkAssignToShipment(Guid id, [FromBody] IEnumerable<Guid> packageIds)
+    {
+        var cmd = new BulkAssignToShipmentCommand(id, packageIds);
+        var result = await _mediator.Send(cmd);
+        return result;
+    }
+
+    // POST: api/shipments/{id}/unload (Driver only) - alias for arrive/unload packages at depot
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id:guid}/unload")]
+    public async Task<ActionResult<Result<bool>>> Unload(Guid id)
+    {
+        // reuse arrival logic
         var result = await _mediator.Send(new ArriveShipmentCommand { ShipmentId = id });
         return result;
     }

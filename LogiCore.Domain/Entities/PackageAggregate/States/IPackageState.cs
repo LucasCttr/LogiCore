@@ -6,7 +6,9 @@ internal interface IPackageState
 {
     PackageStatus Status { get; }
     void StartTransit(Package package);
+    void MoveToDepot(Package package);
     void Deliver(Package package);
+    void DeliverToCenter(Package package);
     void Cancel(Package package);
     void EnsureCanUpdateWeight(Package package, decimal weight);
     void EnsureCanUpdateTrackingNumber(Package package, string trackingNumber);

@@ -10,11 +10,13 @@ public class ArriveShipmentHandler : IRequestHandler<ArriveShipmentCommand, Resu
 {
     private readonly IShipmentRepository _shipmentRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly LogiCore.Application.Common.Interfaces.Persistence.IPackageRepository _packageRepository;
 
-    public ArriveShipmentHandler(IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork)
+    public ArriveShipmentHandler(IShipmentRepository shipmentRepository, IUnitOfWork unitOfWork, LogiCore.Application.Common.Interfaces.Persistence.IPackageRepository packageRepository)
     {
         _shipmentRepository = shipmentRepository;
         _unitOfWork = unitOfWork;
+        _packageRepository = packageRepository;
     }
 
     public async Task<Result<bool>> Handle(ArriveShipmentCommand request, CancellationToken cancellationToken)
@@ -25,7 +27,23 @@ public class ArriveShipmentHandler : IRequestHandler<ArriveShipmentCommand, Resu
         try
         {
             shipment.MarkAsArrived();
+
+            // Move packages in the shipment to depot (batch)
+            var packagesToMove = shipment.Packages
+                .Where(p => p.Status == LogiCore.Domain.Entities.PackageStatus.InTransit)
+                .ToList();
+
+            foreach (var pkg in packagesToMove)
+            {
+                pkg.MoveToDepot();
+            }
+
             await _shipmentRepository.UpdateAsync(shipment);
+            if (packagesToMove.Any())
+            {
+                await _packageRepository.UpdateRangeAsync(packagesToMove);
+            }
+
             await _unitOfWork.CommitAsync(cancellationToken);
             return Result<bool>.Success(true);
         }

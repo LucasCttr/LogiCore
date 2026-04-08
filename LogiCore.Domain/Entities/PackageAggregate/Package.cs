@@ -143,7 +143,10 @@ public class Package : IHasDomainEvents
                 PackageStatus.Pending => new States.PendingState(),
                 PackageStatus.InTransit => new States.InTransitState(),
                 PackageStatus.Delivered => new States.DeliveredState(),
+                PackageStatus.AtDepot => new States.AtDepotState(),
+                PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
                 PackageStatus.Canceled => new States.CanceledState(),
+                PackageStatus.Returned => new States.ReturnedState(),
                 _ => throw new DomainException("Unknown package status")
             };
         }
@@ -158,7 +161,10 @@ public class Package : IHasDomainEvents
             PackageStatus.Pending => new PendingState(),
             PackageStatus.InTransit => new InTransitState(),
             PackageStatus.Delivered => new DeliveredState(),
+            PackageStatus.AtDepot => new AtDepotState(),
+            PackageStatus.DeliveredToCenter => new DeliveredToCenterState(),
             PackageStatus.Canceled => new CanceledState(),
+            PackageStatus.Returned => new ReturnedState(),
             _ => throw new DomainException("Unknown package status")
         };
     }
@@ -168,14 +174,30 @@ public class Package : IHasDomainEvents
         GetState().StartTransit(this);
     }
 
+    public void MoveToDepot()
+    {
+        GetState().MoveToDepot(this);
+    }
+
     public void Deliver()
     {
         GetState().Deliver(this);
     }
 
+    public void DeliverToCenter()
+    {
+        GetState().DeliverToCenter(this);
+    }
+
     public void Cancel()
     {
         GetState().Cancel(this);
+    }
+
+    public void ReturnToOrigin()
+    {
+        // Mark package as returned to origin
+        SetStatus(PackageStatus.Returned);
     }
 
     protected Package() { }

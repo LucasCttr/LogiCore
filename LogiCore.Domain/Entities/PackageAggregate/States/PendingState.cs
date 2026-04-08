@@ -12,6 +12,9 @@ internal class PendingState : PackageState
     public override void StartTransit(Package package) 
         => package.SetStatus(PackageStatus.InTransit);
 
+    public override void MoveToDepot(Package package)
+        => package.SetStatus(PackageStatus.AtDepot);
+
     public override void Cancel(Package package) 
         => package.SetStatus(PackageStatus.Canceled);
 
