@@ -18,7 +18,9 @@ internal class PendingState : PackageState
     public override void Cancel(Package package) 
         => package.SetStatus(PackageStatus.Canceled);
 
-    // --- PERMISSIONS FOR EDITING (Empty Overrides) ---
+    public override void ReturnToOrigin(Package package)
+        => package.SetStatus(PackageStatus.Returned);
+
 
     public override void EnsureCanUpdateDimensions(Package package) 
     { 

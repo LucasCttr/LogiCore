@@ -32,19 +32,19 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
         // Weight is optional but if present must be > 0
         RuleFor(x => x.Weight)
             .GreaterThan(0).WithMessage("Weight must be greater than zero.")
-            .When(x => x.Weight.HasValue);
+            .When(x => x.Weight > 0);
 
         // Dimensions optional
         RuleFor(x => x.LengthCm)
             .GreaterThan(0).WithMessage("Length must be greater than zero.")
-            .When(x => x.LengthCm.HasValue);
+            .When(x => x.LengthCm > 0);
 
         RuleFor(x => x.WidthCm)
             .GreaterThan(0).WithMessage("Width must be greater than zero.")
-            .When(x => x.WidthCm.HasValue);
+            .When(x => x.WidthCm > 0);
 
         RuleFor(x => x.HeightCm)
             .GreaterThan(0).WithMessage("Height must be greater than zero.")
-            .When(x => x.HeightCm.HasValue);
+            .When(x => x.HeightCm > 0);
     }
 }

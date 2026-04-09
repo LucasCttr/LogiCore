@@ -22,6 +22,9 @@ internal abstract class PackageState : IPackageState
     public virtual void Cancel(Package package)
         => throw new DomainException($"Cannot cancel package from state {Status}.");
 
+    public virtual void ReturnToOrigin(Package package)
+        => throw new DomainException($"Cannot return package to origin from state {Status}.");
+
     public virtual void EnsureCanUpdateWeight(Package package, decimal weight)
         => throw new DomainException($"Cannot update weight in state {Status}.");
 

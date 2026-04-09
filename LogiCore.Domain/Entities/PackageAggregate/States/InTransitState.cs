@@ -27,6 +27,9 @@ internal class InTransitState : PackageState
         package.SetStatus(PackageStatus.Canceled);
     }
 
+    public override void ReturnToOrigin(Package package)
+        => package.SetStatus(PackageStatus.Returned);
+
     // --- OVERRIDES ---
     // Not overriding the EnsureCanUpdate... methods means that no edits are allowed in this state, and the base implementation will throw exceptions if attempted.
     // This reflects the idea that once a package is in transit, you cannot change its weight, recipient, tracking number, or dimensions until it is delivered or canceled.

@@ -15,6 +15,9 @@ internal class AtDepotState : PackageState
     public override void Cancel(Package package)
         => package.SetStatus(PackageStatus.Canceled);
 
+    public override void ReturnToOrigin(Package package)
+        => package.SetStatus(PackageStatus.Returned);
+
     public override void EnsureCanUpdateDimensions(Package package)
     {
         // allow editing while at depot

@@ -46,21 +46,20 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
         var recipient = Recipient.Create(recipientName, recipientAddress, recipientPhone, recipientFloor, recipientCity, recipientProvince, recipientPostal, recipientDni);
 
-        // Dimensions: use provided values if present and valid, otherwise use small default dimensions.
+        // Dimensions: use provided values if valid, otherwise use small default dimensions.
         LogiCore.Domain.ValueObjects.Dimensions dims;
-        if (request.LengthCm.HasValue && request.WidthCm.HasValue && request.HeightCm.HasValue
-            && request.LengthCm.Value > 0 && request.WidthCm.Value > 0 && request.HeightCm.Value > 0)
+        if (request.LengthCm > 0 && request.WidthCm > 0 && request.HeightCm > 0)
         {
-            dims = LogiCore.Domain.ValueObjects.Dimensions.Create(request.LengthCm.Value, request.WidthCm.Value, request.HeightCm.Value);
+            dims = LogiCore.Domain.ValueObjects.Dimensions.Create(request.LengthCm, request.WidthCm, request.HeightCm);
         }
         else
         {
             dims = LogiCore.Domain.ValueObjects.Dimensions.Create(1m, 1m, 1m);
         }
 
-        var weight = request.Weight.HasValue && request.Weight.Value > 0 ? request.Weight.Value : 0.1m;
+        var weight = request.Weight > 0 ? request.Weight : 0.1m;
         var package = Domain.Entities.Package.Create(
-            request.TrackingNumber ?? string.Empty,
+            request.TrackingNumber,
             recipient,
             weight,
             userId,

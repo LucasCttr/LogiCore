@@ -10,6 +10,7 @@ internal interface IPackageState
     void Deliver(Package package);
     void DeliverToCenter(Package package);
     void Cancel(Package package);
+    void ReturnToOrigin(Package package);
     void EnsureCanUpdateWeight(Package package, decimal weight);
     void EnsureCanUpdateTrackingNumber(Package package, string trackingNumber);
     void EnsureCanUpdateRecipientName(Package package, string recipientName);

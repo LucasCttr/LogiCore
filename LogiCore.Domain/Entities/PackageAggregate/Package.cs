@@ -14,21 +14,22 @@ public class Package : IHasDomainEvents
     public string TrackingNumber { get; private set; } = null!;
     public Recipient Recipient { get; private set; } = null!;
     public decimal Weight { get; private set; }
-    public string? Description { get; private set; }
-    public string? InternalCode { get; private set; }
-    public string? OriginAddress { get; private set; }
-    public string? DestinationAddress { get; private set; }
+    public string Description { get; private set; }
+    public string InternalCode { get; private set; }
+    public string OriginAddress { get; private set; }
+    public string DestinationAddress { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    // Representa dónde está físicamente (Depósito A, Sucursal B, etc.)
+    public int? CurrentLocationId { get; private set; }
 
+    // Representa en qué viaje está (si Status es InTransit)
+    public int? CurrentShipmentId { get; private set; }
     public PackageStatus Status { get; private set; }
 
     // Link to the Identity user who created the package
-    public string? ApplicationUserId { get; private set; }
+    public string ApplicationUserId { get; private set; }
 
-    // Navigation property (optional)
-    public ApplicationUser? ApplicationUser { get; private set; }
-
-    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string? applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions, string? description = null, string? internalCode = null, string? originAddress = null, string? destinationAddress = null)
+    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions, string description, string internalCode, string originAddress, string destinationAddress)
     {
         // Valdiations - Domain Exceptions
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
@@ -63,11 +64,11 @@ public class Package : IHasDomainEvents
 
     public void ClearDomainEvents() => _domainEvents.Clear();
 
-    private IPackageState? _state;
-    private LogiCore.Domain.ValueObjects.Dimensions? _dimensions;
-    private LogiCore.Domain.ValueObjects.Money? _estimatedCost;
+    private IPackageState _state;
+    private Dimensions _dimensions;
+    private Money _estimatedCost;
 
-    public LogiCore.Domain.ValueObjects.Dimensions? Dimensions => _dimensions;
+    public Dimensions Dimensions => _dimensions;
 
     public void UpdateWeight(decimal weight)
     {
@@ -96,14 +97,14 @@ public class Package : IHasDomainEvents
         Recipient = recipient;
     }
 
-    public void UpdateDimensions(LogiCore.Domain.ValueObjects.Dimensions dimensions)
+    public void UpdateDimensions(Dimensions dimensions)
     {
         GetState().EnsureCanUpdateDimensions(this);
         if (dimensions is null) throw new DomainException("Dimensions are required.");
         _dimensions = dimensions;
     }
 
-    public LogiCore.Domain.ValueObjects.Money? EstimatedCost => _estimatedCost;
+    public Money EstimatedCost => _estimatedCost;
 
     public void ApplyShippingCost(LogiCore.Domain.Common.Interfaces.ICostCalculator calculator)
     {
@@ -143,10 +144,7 @@ public class Package : IHasDomainEvents
                 PackageStatus.Pending => new States.PendingState(),
                 PackageStatus.InTransit => new States.InTransitState(),
                 PackageStatus.Delivered => new States.DeliveredState(),
-                PackageStatus.AtDepot => new States.AtDepotState(),
-                PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
                 PackageStatus.Canceled => new States.CanceledState(),
-                PackageStatus.Returned => new States.ReturnedState(),
                 _ => throw new DomainException("Unknown package status")
             };
         }
@@ -161,12 +159,78 @@ public class Package : IHasDomainEvents
             PackageStatus.Pending => new PendingState(),
             PackageStatus.InTransit => new InTransitState(),
             PackageStatus.Delivered => new DeliveredState(),
-            PackageStatus.AtDepot => new AtDepotState(),
-            PackageStatus.DeliveredToCenter => new DeliveredToCenterState(),
             PackageStatus.Canceled => new CanceledState(),
-            PackageStatus.Returned => new ReturnedState(),
             _ => throw new DomainException("Unknown package status")
         };
+    }
+
+
+    /// <summary>
+    /// Moves the package to a depot location.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void MoveToDepot()
+    {
+        GetState().MoveToDepot(this);
+        CurrentShipmentId = null; // Al entrar al depósito, baja del camión
+    }
+
+    /// <summary>
+    /// Moves the package to a specific depot location with tracking.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void MoveToDepotAt(int locationId)
+    {
+        if (locationId <= 0)
+            throw new DomainException("Invalid location ID.");
+
+        MoveToDepot();
+        CurrentLocationId = locationId;
+    }
+
+    /// <summary>
+    /// Delivers the package to a distribution center.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void DeliverToCenter()
+    {
+        GetState().DeliverToCenter(this);
+    }
+
+    /// <summary>
+    /// Delivers the package to a specific distribution center with tracking.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void DeliverToCenterAt(int locationId)
+    {
+        if (locationId <= 0)
+            throw new DomainException("Invalid location ID.");
+
+        DeliverToCenter();
+        CurrentLocationId = locationId;
+    }
+
+    /// <summary>
+    /// Assigns the package to a shipment, moving it to InTransit status.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void AssignToShipment(int shipmentId)
+    {
+        if (shipmentId <= 0)
+            throw new DomainException("Invalid shipment ID.");
+
+        GetState().StartTransit(this);
+        CurrentShipmentId = shipmentId;
+    }
+
+    /// <summary>
+    /// Returns the package to its origin.
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void ReturnToOrigin()
+    {
+        if (Status == PackageStatus.Returned) return; // Idempotent
+        GetState().ReturnToOrigin(this);
     }
 
     public void StartTransit()
@@ -174,30 +238,14 @@ public class Package : IHasDomainEvents
         GetState().StartTransit(this);
     }
 
-    public void MoveToDepot()
-    {
-        GetState().MoveToDepot(this);
-    }
-
     public void Deliver()
     {
         GetState().Deliver(this);
     }
 
-    public void DeliverToCenter()
-    {
-        GetState().DeliverToCenter(this);
-    }
-
     public void Cancel()
     {
         GetState().Cancel(this);
-    }
-
-    public void ReturnToOrigin()
-    {
-        // Mark package as returned to origin
-        SetStatus(PackageStatus.Returned);
     }
 
     protected Package() { }
