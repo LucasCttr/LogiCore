@@ -6,11 +6,18 @@ public class CreateShipmentCommandValidator : AbstractValidator<CreateShipmentCo
 {
     public CreateShipmentCommandValidator()
     {
-        RuleFor(x => x.RouteCode)
-            .NotEmpty().WithMessage("RouteCode is required.")
-            .MaximumLength(100);
+        RuleFor(x => x.DriverId)
+            .NotEmpty().WithMessage("Driver is required.");
 
         RuleFor(x => x.VehicleId)
-            .NotEmpty().WithMessage("VehicleId is required.");
+            .NotEmpty().WithMessage("Vehicle is required.");
+
+        RuleFor(x => x.PackageIds)
+            .NotEmpty().WithMessage("At least one package must be selected.")
+            .Must(ids => ids.Count > 0).WithMessage("At least one package must be selected.");
+
+        RuleFor(x => x.EstimatedDelivery)
+            .NotEmpty().WithMessage("Estimated delivery date is required.")
+            .GreaterThan(System.DateTime.UtcNow).WithMessage("Estimated delivery must be in the future.");
     }
 }

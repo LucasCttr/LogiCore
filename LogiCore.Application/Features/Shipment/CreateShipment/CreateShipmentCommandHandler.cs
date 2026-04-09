@@ -11,13 +11,23 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
 {
     private readonly IShipmentRepository _shipmentRepository;
     private readonly IVehicleRepository _vehicleRepository;
+    private readonly IDriverRepository _driverRepository;
+    private readonly IPackageRepository _packageRepository;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateShipmentCommandHandler(IShipmentRepository shipmentRepository, IVehicleRepository vehicleRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public CreateShipmentCommandHandler(
+        IShipmentRepository shipmentRepository,
+        IVehicleRepository vehicleRepository,
+        IDriverRepository driverRepository,
+        IPackageRepository packageRepository,
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _shipmentRepository = shipmentRepository;
         _vehicleRepository = vehicleRepository;
+        _driverRepository = driverRepository;
+        _packageRepository = packageRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
@@ -26,24 +36,49 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
     {
         try
         {
-            // Load vehicle from repository to obtain authoritative capacities
+            // Validate vehicle exists and is active
             var vehicle = await _vehicleRepository.GetByIdAsync(request.VehicleId);
             if (vehicle == null)
-                return Result<ShipmentDto>.Failure("Vehicle not found.");
+                return Result<ShipmentDto>.Failure("Vehicle not found.", ErrorType.NotFound);
             if (!vehicle.IsActive)
-                return Result<ShipmentDto>.Failure("Vehicle is not active.");
+                return Result<ShipmentDto>.Failure("Vehicle is not active.", ErrorType.Validation);
 
-            var shipment = LogiCore.Domain.Entities.Shipment.Create(request.RouteCode, request.VehicleId, vehicle.MaxWeightCapacity, vehicle.MaxVolumeCapacity, request.EstimatedDelivery);
+            // Validate driver exists and is active
+            var driver = await _driverRepository.GetByIdAsync(request.DriverId);
+            if (driver == null)
+                return Result<ShipmentDto>.Failure("Driver not found.", ErrorType.NotFound);
+            if (!driver.IsActive)
+                return Result<ShipmentDto>.Failure("Driver is not active.", ErrorType.Validation);
+
+            // Validate all packages exist
+            var packages = (await _packageRepository.GetManyByIdsAsync(request.PackageIds)).ToList();
+            if (packages.Count != request.PackageIds.Count)
+                return Result<ShipmentDto>.Failure("One or more packages not found.", ErrorType.NotFound);
+
+            // Generate route code
+            var routeCode = $"ROUTE-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+
+            // Create shipment
+            var shipment = Domain.Entities.Shipment.Create(
+                routeCode,
+                request.VehicleId,
+                vehicle.MaxWeightCapacity,
+                vehicle.MaxVolumeCapacity,
+                request.EstimatedDelivery);
+
+            // Assign driver and add packages
+            shipment.AssignDriver(request.DriverId);
+            shipment.AddPackages(packages);
+
+            // Persist
             var added = await _shipmentRepository.AddAsync(shipment);
-
-            // Commit to persist the new shipment and publish any domain events
             await _unitOfWork.CommitAsync(cancellationToken);
 
             return Result<ShipmentDto>.Success(_mapper.Map<ShipmentDto>(added));
         }
         catch (LogiCore.Domain.Common.Exceptions.DomainException ex)
         {
-            return Result<ShipmentDto>.Failure(ex.Message);
+            return Result<ShipmentDto>.Failure(ex.Message, ErrorType.Conflict);
         }
     }
 }
