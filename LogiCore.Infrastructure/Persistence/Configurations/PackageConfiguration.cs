@@ -61,6 +61,10 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 
+        builder.Property(e => e.CurrentLocationId);
+
+        builder.Property(e => e.CurrentShipmentId);
+
         builder.Property(e => e.Status)
             .HasConversion<int>()
             .IsRequired();

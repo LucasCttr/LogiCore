@@ -23,6 +23,8 @@ public class Shipment : IHasDomainEvents
     public DateTime? ShippedAt { get; private set; }
     public DateTime? DeliveredAt { get; private set; }
     public DateTime? ArrivedAt { get; private set; }
+    // Optional destination location: NULL = last-mile delivery (door-to-door), NOT NULL = inter-depot shipment
+    public int? DestinationLocationId { get; private set; }
     private readonly List<Package> _packages = new();
     public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }

@@ -3,6 +3,7 @@ using System;
 using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409230757_AddCurrentLocationAndShipmentToPackage")]
+    partial class AddCurrentLocationAndShipmentToPackage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -305,9 +308,6 @@ namespace LogiCore.Infrastructure.Migrations
                     b.Property<DateTime?>("DeliveredAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("DestinationLocationId")
-                        .HasColumnType("integer");
-
                     b.Property<Guid?>("DriverId")
                         .HasColumnType("uuid");
 
@@ -316,8 +316,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.Property<string>("RouteCode")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ShippedAt")
                         .HasColumnType("timestamp with time zone");
@@ -329,12 +328,10 @@ namespace LogiCore.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("VehicleMaxVolumeCapacity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("VehicleMaxWeightCapacity")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -342,7 +339,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("Shipments", (string)null);
+                    b.ToTable("Shipments");
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Vehicle", b =>
