@@ -66,12 +66,10 @@ public class PackageConfiguration : IEntityTypeConfiguration<Package>
             .IsRequired();
 
         builder.Property(e => e.ApplicationUserId)
-            .HasMaxLength(450);
+            .HasMaxLength(450)
+            .IsRequired();
 
-        builder.HasOne(p => p.ApplicationUser)
-            .WithMany(u => u.Packages)
-            .HasForeignKey(p => p.ApplicationUserId)
-            .OnDelete(DeleteBehavior.SetNull);
+        // Note: ApplicationUser navigation property is not mapped as it's not part of the aggregate.
 
         // Map Money (EstimatedCost) as an owned value object stored in Package table (backing field _estimatedCost)
         builder.OwnsOne(typeof(LogiCore.Domain.ValueObjects.Money), "_estimatedCost", owned =>

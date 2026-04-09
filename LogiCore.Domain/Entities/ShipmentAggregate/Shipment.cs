@@ -64,6 +64,9 @@ public class Shipment : IHasDomainEvents
         };
     }
 
+    /// <summary>
+    /// Adds a single package to the shipment with validation.
+    /// </summary>
     public void AddPackage(Package package)
     {
         if (package is null) throw new DomainException("Package cannot be null.");
@@ -71,19 +74,64 @@ public class Shipment : IHasDomainEvents
         if (package.Status != PackageStatus.Pending && package.Status != PackageStatus.AtDepot)
             throw new DomainException("Only packages with Pending or AtDepot status can be added to a shipment.");
 
+        ValidateCapacity(package);
+        _packages.Add(package);
+    }
+
+    /// <summary>
+    /// Adds multiple packages to the shipment in bulk.
+    /// All packages must be valid before any are added (atomic operation).
+    /// </summary>
+    public void AddPackages(IEnumerable<Package> packages)
+    {
+        if (packages is null) throw new DomainException("Packages collection cannot be null.");
+
+        var packagesList = packages.ToList();
+        if (!packagesList.Any()) throw new DomainException("At least one package is required.");
+
+        // Validate all packages before adding any (fail-fast)
+        foreach (var package in packagesList)
+        {
+            if (package is null) throw new DomainException("Package cannot be null.");
+            
+            if (package.Status != PackageStatus.Pending && package.Status != PackageStatus.AtDepot)
+                throw new DomainException($"Package {package.TrackingNumber} has invalid status. Only Pending or AtDepot packages can be added.");
+        }
+
+        // Validate cumulative capacity
+        var totalWeight = GetCurrentWeight() + packagesList.Sum(p => p.Weight);
+        var weightCapacity = Vehicle?.MaxWeightCapacity ?? VehicleMaxWeightCapacity;
+        if (totalWeight > weightCapacity)
+            throw new DomainException($"Adding these packages would exceed weight capacity. Required: {totalWeight}kg, Capacity: {weightCapacity}kg");
+
+        var totalVolume = _packages.Sum(p => p.Dimensions?.VolumeCm3 ?? 0) + 
+                         packagesList.Sum(p => p.Dimensions?.VolumeCm3 ?? 0m);
+        var volumeCapacity = Vehicle?.MaxVolumeCapacity ?? VehicleMaxVolumeCapacity;
+        if (totalVolume > volumeCapacity)
+            throw new DomainException($"Adding these packages would exceed volume capacity. Required: {totalVolume}cm3, Capacity: {volumeCapacity}cm3");
+
+        // All validations passed, add all packages
+        foreach (var package in packagesList)
+        {
+            _packages.Add(package);
+        }
+    }
+
+    /// <summary>
+    /// Validates if a package can be added based on vehicle capacity.
+    /// </summary>
+    private void ValidateCapacity(Package package)
+    {
         var weightCapacity = Vehicle?.MaxWeightCapacity ?? VehicleMaxWeightCapacity;
         if (GetCurrentWeight() + package.Weight > weightCapacity)
             throw new DomainException("The vehicle would exceed its weight capacity (kg).");
-            
-        // Volume check
+
         var volumeCapacity = Vehicle?.MaxVolumeCapacity ?? VehicleMaxVolumeCapacity;
         var currentVolume = _packages.Sum(p => p.Dimensions?.VolumeCm3 ?? 0);
         var packageVolume = package.Dimensions?.VolumeCm3 ?? 0m;
 
         if (currentVolume + packageVolume > volumeCapacity)
             throw new DomainException("The vehicle would exceed its volume capacity (cm3).");
-
-        _packages.Add(package);
     }
 
     public decimal GetCurrentWeight()
@@ -91,6 +139,9 @@ public class Shipment : IHasDomainEvents
         return _packages.Sum(p => p.Weight);
     }
 
+    /// <summary>
+    /// Dispatches the shipment and transitions all packages to InTransit status.
+    /// </summary>
     public void DispatchShipment()
     {
         if (!_packages.Any())
@@ -102,13 +153,9 @@ public class Shipment : IHasDomainEvents
         Status = ShipmentStatus.Dispatched;
         if (ShippedAt == null) ShippedAt = DateTime.UtcNow;
 
-        // Start transit for all packages in the shipment
-        foreach (var package in _packages)
-        {
-            package.StartTransit();
-        }
+        // Synchronize all packages to InTransit status
+        SyncPackagesToInTransit();
 
-        // Emits a domain event for the shipment dispatch
         AddDomainEvent(new ShipmentDispatchedEvent
         {
             ShipmentId = this.Id,
@@ -143,6 +190,10 @@ public class Shipment : IHasDomainEvents
         });
     }
 
+    /// <summary>
+    /// Marks the shipment as arrived at final destination.
+    /// Synchronizes all packages to AtDepot status.
+    /// </summary>
     public void MarkAsArrived()
     {
         if (Status != ShipmentStatus.Dispatched)
@@ -151,6 +202,9 @@ public class Shipment : IHasDomainEvents
         ArrivedAt = DateTime.UtcNow;
         Status = ShipmentStatus.Arrived;
 
+        // Synchronize all packages to AtDepot status
+        SyncPackagesToDepot();
+
         AddDomainEvent(new ShipmentArrivedEvent
         {
             ShipmentId = this.Id,
@@ -158,16 +212,48 @@ public class Shipment : IHasDomainEvents
         });
     }
 
+    /// <summary>
+    /// Cancels the shipment and all its packages.
+    /// </summary>
     public void Cancel()
     {
         if (Status == ShipmentStatus.Dispatched || Status == ShipmentStatus.Arrived || Status == ShipmentStatus.Delivered)
             throw new DomainException("Cannot cancel a shipment that is already dispatched or completed.");
 
         Status = ShipmentStatus.Canceled;
+
+        // Synchronize all packages to Canceled status
+        foreach (var package in _packages)
+        {
+            package.Cancel();
+        }
+
         AddDomainEvent(new ShipmentCanceledEvent
         {
             ShipmentId = this.Id,
             OccurredOn = DateTime.UtcNow
         });
+    }
+
+    /// <summary>
+    /// Synchronizes all packages to InTransit status when shipment is dispatched.
+    /// </summary>
+    private void SyncPackagesToInTransit()
+    {
+        foreach (var package in _packages)
+        {
+            package.StartTransit();
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes all packages to AtDepot status when shipment arrives at destination.
+    /// </summary>
+    private void SyncPackagesToDepot()
+    {
+        foreach (var package in _packages)
+        {
+            package.MoveToDepot();
+        }
     }
 }

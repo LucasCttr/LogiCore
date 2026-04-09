@@ -7,6 +7,7 @@ using LogiCore.Application.Common.Models;
 using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
 using LogiCore.Application.Features.Packages;
+using LogiCore.Application.Features.Package.MarkPackageAsDelivered;
 
 namespace LogiCore.Api.Controllers;
 
@@ -64,6 +65,16 @@ public class PackagesController : ControllerBase
         public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
     {
         var result = await _mediator.Send(new DeliverPackageCommand(id));
+        return result;
+    }
+
+    // POST: api/packages/{id}/mark-delivered (Driver - marks package as delivered with location & notes)
+    [HttpPost("{id:guid}/mark-delivered")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> MarkDelivered(Guid id, [FromBody] MarkPackageAsDeliveredCommand request)
+    {
+        request = request with { PackageId = id };
+        var result = await _mediator.Send(request);
         return result;
     }
 

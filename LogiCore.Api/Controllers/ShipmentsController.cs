@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
+using LogiCore.Application.Features.Shipment;
 using LogiCore.Application.Features.Shipment.CreateShipment;
 using LogiCore.Application.Features.Shipment.GetById;
 using LogiCore.Application.Features.Shipment.GetAll;
@@ -17,8 +18,8 @@ using LogiCore.Application.Features.Shipment.ArriveShipment;
 using LogiCore.Application.Features.Shipment.CompleteShipment;
 using LogiCore.Application.Features.Shipment.CancelShipment;
 using LogiCore.Application.Features.Shipment.GetPaged;
+using LogiCore.Application.Features.Shipment.AddPackagesToShipment;
 using LogiCore.Application.Features.Packages;
-using LogiCore.Application.Features.Shipment;
 
 namespace LogiCore.Api.Controllers;
 
@@ -106,6 +107,20 @@ public class ShipmentsController : ControllerBase
         return result;
     }
 
+    // POST: api/shipments/{id}/add-packages (Admin only) - add multiple packages at once
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id:guid}/add-packages")]
+    public async Task<ActionResult<Result<bool>>> AddPackages(Guid id, [FromBody] List<Guid> packageIds)
+    {
+        var command = new AddPackagesToShipmentCommand 
+        { 
+            ShipmentId = id, 
+            PackageIds = packageIds 
+        };
+        var result = await _mediator.Send(command);
+        return result;
+    }
+
     // POST: api/shipments/{id}/dispatch (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/dispatch")]
@@ -148,25 +163,7 @@ public class ShipmentsController : ControllerBase
         return result;
     }
 
-    // POST: api/shipments/{id}/packages/bulk (Admin only)
-    [Authorize(Roles = "Admin")]
-    [HttpPost("{id:guid}/packages/bulk")]
-    public async Task<ActionResult<Result<bool>>> BulkAssignToShipment(Guid id, [FromBody] IEnumerable<Guid> packageIds)
-    {
-        var cmd = new BulkAssignToShipmentCommand(id, packageIds);
-        var result = await _mediator.Send(cmd);
-        return result;
-    }
 
-    // POST: api/shipments/{id}/unload (Driver only) - alias for arrive/unload packages at depot
-    [Authorize(Roles = "Driver")]
-    [HttpPost("{id:guid}/unload")]
-    public async Task<ActionResult<Result<bool>>> Unload(Guid id)
-    {
-        // reuse arrival logic
-        var result = await _mediator.Send(new ArriveShipmentCommand { ShipmentId = id });
-        return result;
-    }
 
     // POST: api/shipments/{id}/complete (Driver only)
     [Authorize(Roles = "Driver")]
