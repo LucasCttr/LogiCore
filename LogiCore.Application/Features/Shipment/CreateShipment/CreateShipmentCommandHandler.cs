@@ -64,7 +64,8 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
                 request.VehicleId,
                 vehicle.MaxWeightCapacity,
                 vehicle.MaxVolumeCapacity,
-                request.EstimatedDelivery);
+                request.EstimatedDelivery,
+                request.DestinationLocationId);
 
             // Assign driver and add packages
             shipment.AssignDriver(request.DriverId);

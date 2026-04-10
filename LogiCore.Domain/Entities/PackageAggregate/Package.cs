@@ -23,7 +23,7 @@ public class Package : IHasDomainEvents
     public int? CurrentLocationId { get; private set; }
 
     // Representa en qué viaje está (si Status es InTransit)
-    public int? CurrentShipmentId { get; private set; }
+    public Guid? CurrentShipmentId { get; private set; }
     public PackageStatus Status { get; private set; }
 
     // Link to the Identity user who created the package
@@ -214,9 +214,9 @@ public class Package : IHasDomainEvents
     /// Assigns the package to a shipment, moving it to InTransit status.
     /// Delegates state validation to the current state via the State Pattern.
     /// </summary>
-    public void AssignToShipment(int shipmentId)
+    public void AssignToShipment(Guid shipmentId)
     {
-        if (shipmentId <= 0)
+        if (shipmentId == Guid.Empty)
             throw new DomainException("Invalid shipment ID.");
 
         GetState().StartTransit(this);

@@ -10,4 +10,5 @@ public class CreateShipmentCommand : IRequest<Result<ShipmentDto>>
     public required Guid VehicleId { get; init; }
     public required List<Guid> PackageIds { get; init; }
     public required DateTime EstimatedDelivery { get; init; }
+    public int? DestinationLocationId { get; init; }
 }

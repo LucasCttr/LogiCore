@@ -37,7 +37,7 @@ public class Shipment : IHasDomainEvents
 
     protected Shipment() { }
 
-    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery)
+    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? destinationLocationId = null)
     {
         if (string.IsNullOrWhiteSpace(routeCode))
             throw new DomainException("Route code is required.");
@@ -62,7 +62,8 @@ public class Shipment : IHasDomainEvents
             VehicleMaxVolumeCapacity = vehicleMaxVolumeCapacity,
             Status = ShipmentStatus.Draft,
             CreatedAt = DateTime.UtcNow,
-            EstimatedDelivery = estimatedDelivery
+            EstimatedDelivery = estimatedDelivery,
+            DestinationLocationId = destinationLocationId
         };
     }
 
@@ -77,6 +78,7 @@ public class Shipment : IHasDomainEvents
             throw new DomainException("Only packages with Pending or AtDepot status can be added to a shipment.");
 
         ValidateCapacity(package);
+        package.AssignToShipment(this.Id);
         _packages.Add(package);
     }
 
@@ -115,6 +117,7 @@ public class Shipment : IHasDomainEvents
         // All validations passed, add all packages
         foreach (var package in packagesList)
         {
+            package.AssignToShipment(this.Id);
             _packages.Add(package);
         }
     }
