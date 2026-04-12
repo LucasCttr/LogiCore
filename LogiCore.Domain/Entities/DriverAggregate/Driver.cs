@@ -50,6 +50,20 @@ public class Driver : IHasDomainEvents
     // MMethods for behavior (Domain Logic)
     public void SetActive(bool active) => IsActive = active;
 
+    public void SetName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("Driver name is required.");
+        Name = name.Trim();
+    }
+
+    public void SetLicenseNumber(string licenseNumber)
+    {
+        if (string.IsNullOrWhiteSpace(licenseNumber))
+            throw new DomainException("License number is required.");
+        LicenseNumber = licenseNumber.Trim();
+    }
+
     public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
     public void ClearDomainEvents() => _domainEvents.Clear();
 }
