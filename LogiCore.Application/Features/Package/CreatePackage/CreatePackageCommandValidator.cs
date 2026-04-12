@@ -7,8 +7,8 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
     public CreatePackageCommandValidator()
     {
         RuleFor(x => x.TrackingNumber)
-            .NotEmpty().WithMessage("TrackingNumber is required.")
-            .MaximumLength(50);
+            .MaximumLength(50)
+            .When(x => !string.IsNullOrWhiteSpace(x.TrackingNumber));
         RuleFor(x => x.Description)
             .MaximumLength(500)
             .When(x => !string.IsNullOrWhiteSpace(x.Description));

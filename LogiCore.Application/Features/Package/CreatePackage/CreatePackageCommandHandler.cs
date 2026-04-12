@@ -25,10 +25,19 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
     public async Task<Result<PackageDto>> Handle(CreatePackageCommand request, CancellationToken cancellationToken)
     {
-        // Business validation: ensure tracking number is unique
-        if (await _packageRepository.ExistsByTrackingNumberAsync(request.TrackingNumber))
+        // Generate tracking number if not provided
+        var trackingNumber = request.TrackingNumber;
+        if (string.IsNullOrWhiteSpace(trackingNumber))
         {
-            return Result<PackageDto>.Failure("A package with the same tracking number already exists.", ErrorType.Conflict);
+            trackingNumber = await GenerateUniqueTrackingNumberAsync();
+        }
+        else
+        {
+            // Business validation: ensure tracking number is unique if provided
+            if (await _packageRepository.ExistsByTrackingNumberAsync(trackingNumber))
+            {
+                return Result<PackageDto>.Failure("A package with the same tracking number already exists.", ErrorType.Conflict);
+            }
         }
 
         var userId = _currentUserService.UserId;
@@ -59,7 +68,7 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
         var weight = request.Weight > 0 ? request.Weight : 0.1m;
         var package = Domain.Entities.Package.Create(
-            request.TrackingNumber,
+            trackingNumber,
             recipient,
             weight,
             userId,
@@ -87,5 +96,25 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
 
         // Do not call SaveChanges here; SaveChanges will be executed by the SaveChangesBehavior (UnitOfWork) after handler completes
         return Result<PackageDto>.Success(_mapper.Map<PackageDto>(added));
+    }
+
+    private async Task<string> GenerateUniqueTrackingNumberAsync()
+    {
+        string trackingNumber;
+        const int maxAttempts = 10;
+        int attempts = 0;
+
+        do
+        {
+            trackingNumber = $"PKG-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(10000, 99999)}";
+            attempts++;
+        } while (await _packageRepository.ExistsByTrackingNumberAsync(trackingNumber) && attempts < maxAttempts);
+
+        if (attempts >= maxAttempts)
+        {
+            throw new InvalidOperationException("Unable to generate unique tracking number after maximum attempts.");
+        }
+
+        return trackingNumber;
     }
 }

@@ -6,7 +6,7 @@ namespace LogiCore.Application.Features.Packages;
 public class CreatePackageCommand : IRequest<Result<PackageDto>>
 {
     // Basic fields used by the simplified frontend
-    public required string TrackingNumber { get; init; }
+    public string? TrackingNumber { get; init; } // Auto-generated if null
     public required string Description { get; init; }
     public required string InternalCode { get; init; }
     public required decimal Weight { get; init; }

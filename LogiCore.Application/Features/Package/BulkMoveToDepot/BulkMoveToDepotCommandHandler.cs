@@ -16,7 +16,7 @@ public class BulkMoveToDepotCommandHandler : IRequestHandler<BulkMoveToDepotComm
     public async Task<Result<bool>> Handle(BulkMoveToDepotCommand request, CancellationToken cancellationToken)
     {
         if (request.PackageIds == null || !request.PackageIds.Any())
-            return Result<bool>.Failure("No se proporcionaron IDs de paquetes.");
+            return Result<bool>.Failure("No package IDs provided.");
 
         var packages = (await _packageRepository.GetManyByIdsAsync(request.PackageIds)).ToList();
 

@@ -145,6 +145,9 @@ public class Package : IHasDomainEvents
                 PackageStatus.InTransit => new States.InTransitState(),
                 PackageStatus.Delivered => new States.DeliveredState(),
                 PackageStatus.Canceled => new States.CanceledState(),
+                PackageStatus.AtDepot => new States.AtDepotState(),
+                PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
+                PackageStatus.Returned => new States.ReturnedState(),
                 _ => throw new DomainException("Unknown package status")
             };
         }
@@ -160,6 +163,9 @@ public class Package : IHasDomainEvents
             PackageStatus.InTransit => new InTransitState(),
             PackageStatus.Delivered => new DeliveredState(),
             PackageStatus.Canceled => new CanceledState(),
+            PackageStatus.AtDepot => new States.AtDepotState(),
+            PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
+            PackageStatus.Returned => new States.ReturnedState(),
             _ => throw new DomainException("Unknown package status")
         };
     }

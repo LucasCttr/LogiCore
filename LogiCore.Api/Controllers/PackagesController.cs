@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
 using LogiCore.Application.Features.Packages;
 using LogiCore.Application.Features.Package.MarkPackageAsDelivered;
+using LogiCore.Application.Features.Package.GetPackageForScanner;
+using LogiCore.Application.Features.Package.MoveToDepot;
 
 namespace LogiCore.Api.Controllers;
 
@@ -62,9 +64,18 @@ public class PackagesController : ControllerBase
     // POST: api/packages/{id}/deliver
     [HttpPost("{id:guid}/deliver")]
     [Microsoft.AspNetCore.Authorization.Authorize]
-        public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
+    public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
     {
         var result = await _mediator.Send(new DeliverPackageCommand(id));
+        return result;
+    }
+
+    // POST: api/packages/{id}/move-to-depot (Scanner action - move package to depot)
+    [HttpPost("{id:guid}/move-to-depot")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> MoveToDepot(Guid id)
+    {
+        var result = await _mediator.Send(new MovePackageToDepotCommand(id));
         return result;
     }
 
@@ -81,7 +92,7 @@ public class PackagesController : ControllerBase
     // POST: api/packages/{id}/cancel
     [HttpPost("{id:guid}/cancel")]
     [Microsoft.AspNetCore.Authorization.Authorize]
-        public async Task<ActionResult<Result<PackageDto>>> Cancel(Guid id)
+    public async Task<ActionResult<Result<PackageDto>>> Cancel(Guid id)
     {
         var result = await _mediator.Send(new CancelPackageCommand(id));
         return result;
@@ -95,14 +106,14 @@ public class PackagesController : ControllerBase
         var result = await _mediator.Send(request);
         return result;
     }
-        // POST: api/packages/bulk/cancel-or-return
-        [HttpPost("bulk/cancel-or-return")]
-        [Microsoft.AspNetCore.Authorization.Authorize]
-        public async Task<ActionResult<Result<bool>>> BulkCancelOrReturn([FromBody] BulkCancelPackagesCommand request)
-        {
-            var result = await _mediator.Send(request);
-            return result;
-        }
+    // POST: api/packages/bulk/cancel-or-return
+    [HttpPost("bulk/cancel-or-return")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> BulkCancelOrReturn([FromBody] BulkCancelPackagesCommand request)
+    {
+        var result = await _mediator.Send(request);
+        return result;
+    }
 
 
     // GET: api/packages/tracking/{trackingNumber} (public minimal history)
@@ -120,6 +131,24 @@ public class PackagesController : ControllerBase
     public async Task<ActionResult<Result<IEnumerable<PackageInternalHistoryDto>>>> GetHistory(Guid id)
     {
         var result = await _mediator.Send(new LogiCore.Application.Features.Package.GetPackageHistory.GetPackageHistoryQuery(id));
+        return result;
+    }
+
+    // GET: api/packages/scanner/tracking/{trackingNumber} (Scanner mode - validates package by tracking number from barcode)
+    [HttpGet("scanner/tracking/{trackingNumber}")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<PackageForScannerDto>>> GetForScannerByTracking(string trackingNumber)
+    {
+        var result = await _mediator.Send(new GetPackageForScannerByTrackingQuery(trackingNumber));
+        return result;
+    }
+
+    // GET: api/packages/scanner/{id:guid} (Scanner mode - validates package for depot ingress by GUID)
+    [HttpGet("scanner/{id:guid}")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<PackageForScannerDto>>> GetForScanner(Guid id)
+    {
+        var result = await _mediator.Send(new GetPackageForScannerQuery(id));
         return result;
     }
 }

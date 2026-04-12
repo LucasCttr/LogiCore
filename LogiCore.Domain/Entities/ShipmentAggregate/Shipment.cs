@@ -74,8 +74,8 @@ public class Shipment : IHasDomainEvents
     {
         if (package is null) throw new DomainException("Package cannot be null.");
 
-        if (package.Status != PackageStatus.Pending && package.Status != PackageStatus.AtDepot)
-            throw new DomainException("Only packages with Pending or AtDepot status can be added to a shipment.");
+        if (package.Status != PackageStatus.AtDepot)
+            throw new DomainException("Only packages with AtDepot status can be assigned to a shipment.");
 
         ValidateCapacity(package);
         package.AssignToShipment(this.Id);
@@ -98,8 +98,8 @@ public class Shipment : IHasDomainEvents
         {
             if (package is null) throw new DomainException("Package cannot be null.");
             
-            if (package.Status != PackageStatus.Pending && package.Status != PackageStatus.AtDepot)
-                throw new DomainException($"Package {package.TrackingNumber} has invalid status. Only Pending or AtDepot packages can be added.");
+            if (package.Status != PackageStatus.AtDepot)
+                throw new DomainException($"Package {package.TrackingNumber} has invalid status. Only AtDepot packages can be assigned to a shipment.");
         }
 
         // Validate cumulative capacity
