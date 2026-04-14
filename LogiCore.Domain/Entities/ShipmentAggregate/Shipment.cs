@@ -29,6 +29,12 @@ public class Shipment : IHasDomainEvents
     public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }
 
+    /// <summary>
+    /// Determines the shipment type based on DestinationLocationId:
+    /// LastMile if null (final delivery to customer), Transfer if not null (inter-depot)
+    /// </summary>
+    public ShipmentType Type => DestinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile;
+
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 

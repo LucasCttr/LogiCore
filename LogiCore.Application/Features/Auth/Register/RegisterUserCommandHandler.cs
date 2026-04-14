@@ -1,5 +1,6 @@
 using AutoMapper;
 using LogiCore.Application.Common.Models;
+using LogiCore.Application.DTOs;
 using LogiCore.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;

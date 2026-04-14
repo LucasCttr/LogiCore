@@ -1,4 +1,13 @@
-namespace LogiCore.Application.Features.Auth;
+namespace LogiCore.Application.DTOs;
 
-// This DTO is used to transfer package data between the application and the API layer.
-public record UserDto(String Id, string FirstName, string LastName, string Email, DateTime CreatedAt);
+public record UserDto(
+    string Id,
+    string UserName,
+    string FirstName,
+    string LastName,
+    string Email,
+    bool EmailConfirmed,
+    bool IsActive,
+    IEnumerable<string>? Roles,
+    DateTime CreatedAt
+);

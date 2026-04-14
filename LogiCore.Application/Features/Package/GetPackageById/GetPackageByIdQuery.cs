@@ -3,7 +3,7 @@ using LogiCore.Application.DTOs;
 using MediatR;
 
 namespace LogiCore.Application.Features.Packages;
-public class GetPackageByIdQuery : IRequest<Result<PackageDto>>
+public class GetPackageByIdQuery : IRequest<Result<PackageDetailDto>>
 {
     public Guid Id { get; }
 

@@ -1,4 +1,5 @@
 using LogiCore.Application.Common.Models;
+using LogiCore.Application.DTOs;
 using MediatR;
 
 namespace LogiCore.Application.Features.Auth;

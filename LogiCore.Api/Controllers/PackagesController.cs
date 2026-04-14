@@ -35,7 +35,7 @@ public class PackagesController : ControllerBase
     // GET: api/packages/{id}
     [HttpGet("{id:guid}")]
     [Microsoft.AspNetCore.Authorization.Authorize]
-    public async Task<ActionResult<Result<PackageDto>>> GetById(Guid id)
+    public async Task<ActionResult<Result<PackageDetailDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetPackageByIdQuery(id));
         return result;
