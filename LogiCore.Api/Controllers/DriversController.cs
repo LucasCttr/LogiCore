@@ -8,7 +8,9 @@ using LogiCore.Application.Features.Driver.GetAll;
 using LogiCore.Application.Features.Driver.GetById;
 using LogiCore.Application.Features.Driver.UpdateStatus;
 using LogiCore.Application.Features.Driver.Update;
+using LogiCore.Application.Features.Driver;
 using LogiCore.Application.Common.Models;
+using LogiCore.Api.Models;
 
 namespace LogiCore.Api.Controllers;
 
@@ -119,6 +121,16 @@ public class DriversController : ControllerBase
 
         request.DriverId = id;
         var result = await _mediator.Send(request);
+        return result;
+    }
+
+    // PUT: api/drivers/{id}/assign-vehicle
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/assign-vehicle")]
+    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> AssignVehicle(Guid id, [FromBody] AssignVehicleRequest request)
+    {
+        var command = new AssignVehicleToDriverCommand { DriverId = id, VehicleId = request.VehicleId };
+        var result = await _mediator.Send(command);
         return result;
     }
 }

@@ -19,6 +19,8 @@ public class Package : IHasDomainEvents
     public string OriginAddress { get; private set; }
     public string DestinationAddress { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime LastUpdatedAt { get; private set; }
+    public PackagePriority Priority { get; private set; } = PackagePriority.Standard;
     // Representa dónde está físicamente (Depósito A, Sucursal B, etc.)
     public int? CurrentLocationId { get; private set; }
 
@@ -29,20 +31,23 @@ public class Package : IHasDomainEvents
     // Link to the Identity user who created the package
     public string ApplicationUserId { get; private set; }
 
-    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions, string description, string internalCode, string originAddress, string destinationAddress)
+    public static Package Create(string trackingNumber, Recipient recipient, decimal weight, string applicationUserId, LogiCore.Domain.ValueObjects.Dimensions dimensions, string description, string internalCode, string originAddress, string destinationAddress, PackagePriority priority = PackagePriority.Standard)
     {
         // Valdiations - Domain Exceptions
         if (weight <= 0) throw new PackageWeightException("Weight must be greater than zero!.");
         if (string.IsNullOrWhiteSpace(trackingNumber)) throw new DomainException("Invalid Tracking Number.");
         if (recipient is null) throw new DomainException("Recipient is required.");
 
+        var now = DateTime.UtcNow;
         var package = new Package
         {
             Id = Guid.NewGuid(),
             TrackingNumber = trackingNumber,
             Recipient = recipient,
             Weight = weight,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            LastUpdatedAt = now,
+            Priority = priority,
             ApplicationUserId = applicationUserId,
             Status = PackageStatus.Pending,
             Description = description,
@@ -123,6 +128,7 @@ public class Package : IHasDomainEvents
 
         var old = Status;
         Status = status;
+        LastUpdatedAt = DateTime.UtcNow;
 
         AddDomainEvent(new PackageStatusChangedEvent
         {

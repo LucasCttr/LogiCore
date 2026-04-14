@@ -46,14 +46,14 @@ public class VehiclesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Result<VehicleDto>>> Create([FromBody] CreateVehicleDto request)
     {
-        return await _mediator.Send(new CreateVehicleCommand(request.Plate, request.MaxWeightCapacity, request.MaxVolumeCapacity));
+        return await _mediator.Send(new CreateVehicleCommand(request.Plate, request.Make, request.Model, request.MaxWeightCapacity, request.MaxVolumeCapacity));
     }
 
     // PUT: api/vehicles/{id}
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<Result<VehicleDto>>> Update(Guid id, [FromBody] UpdateVehicleDto request)
     {
-        return await _mediator.Send(new UpdateVehicleCommand(id, request.Plate, request.MaxWeightCapacity, request.MaxVolumeCapacity, request.IsActive));
+        return await _mediator.Send(new UpdateVehicleCommand(id, request.Plate, request.Make, request.Model, request.MaxWeightCapacity, request.MaxVolumeCapacity, request.IsActive));
     }
 
     // DELETE: api/vehicles/{id}

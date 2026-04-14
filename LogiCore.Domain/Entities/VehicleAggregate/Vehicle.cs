@@ -16,6 +16,8 @@ public class Vehicle : IHasDomainEvents
 {
     public Guid Id { get; private set; }
     public string Plate { get; private set; } = null!;
+    public string? Make { get; private set; }
+    public string? Model { get; private set; }
     public decimal MaxWeightCapacity { get; private set; }
     public decimal MaxVolumeCapacity { get; private set; }
     public bool IsActive { get; private set; }
@@ -29,7 +31,7 @@ public class Vehicle : IHasDomainEvents
 
     protected Vehicle() { }
 
-    public static Vehicle Create(string plate, decimal maxWeight, decimal maxVolume)
+    public static Vehicle Create(string plate, decimal maxWeight, decimal maxVolume, string? make = null, string? model = null)
     {
         if (string.IsNullOrWhiteSpace(plate))
             throw new DomainException("The plate number is required.");
@@ -44,6 +46,8 @@ public class Vehicle : IHasDomainEvents
         {
             Id = Guid.NewGuid(),
             Plate = plate.ToUpper().Trim(),
+            Make = make?.Trim(),
+            Model = model?.Trim(),
             MaxWeightCapacity = maxWeight,
             MaxVolumeCapacity = maxVolume,
             IsActive = true,
@@ -64,5 +68,24 @@ public class Vehicle : IHasDomainEvents
     {
         Status = status;
         IsActive = status == VehicleStatus.Active;
+    }
+
+    public void Update(string plate, string? make, string? model, decimal maxWeight, decimal maxVolume, bool isActive)
+    {
+        if (string.IsNullOrWhiteSpace(plate))
+            throw new DomainException("The plate number is required.");
+
+        if (maxWeight <= 0)
+            throw new DomainException("The weight capacity must be greater than zero.");
+
+        if (maxVolume <= 0)
+            throw new DomainException("The volume capacity must be greater than zero.");
+
+        Plate = plate.ToUpper().Trim();
+        Make = make?.Trim();
+        Model = model?.Trim();
+        MaxWeightCapacity = maxWeight;
+        MaxVolumeCapacity = maxVolume;
+        SetActive(isActive);
     }
 }

@@ -88,9 +88,9 @@ public class ShipmentsController : ControllerBase
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
         var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
-        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+        if (driverResult == null || !driverResult.IsSuccess || driverResult.Value == null) return Forbid();
 
-        var driver = driverResult.Value!;
+        var driver = driverResult.Value;
         if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
 
         return result;

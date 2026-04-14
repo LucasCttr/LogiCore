@@ -1,6 +1,7 @@
 using MediatR;
 using LogiCore.Application.Common.Models;
 using LogiCore.Application.DTOs;
+using LogiCore.Domain.Entities;
 
 namespace LogiCore.Application.Features.Packages;
 public class CreatePackageCommand : IRequest<Result<PackageDto>>
@@ -10,6 +11,7 @@ public class CreatePackageCommand : IRequest<Result<PackageDto>>
     public required string Description { get; init; }
     public required string InternalCode { get; init; }
     public required decimal Weight { get; init; }
+    public PackagePriority Priority { get; init; } = PackagePriority.Standard;
 
     // Free-text origin/destination
     public required string Origin { get; init; }

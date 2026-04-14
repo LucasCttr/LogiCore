@@ -76,7 +76,8 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
             request.Description,
             request.InternalCode,
             request.Origin,
-            request.Destination);
+            request.Destination,
+            request.Priority);
         var added = await _packageRepository.AddAsync(package);
         // Also register this address with the autocomplete service so it appears in suggestions
         if (!string.IsNullOrWhiteSpace(recipientAddress))

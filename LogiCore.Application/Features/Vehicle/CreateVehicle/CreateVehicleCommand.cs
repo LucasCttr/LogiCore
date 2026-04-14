@@ -4,4 +4,4 @@ using LogiCore.Application.DTOs;
 
 namespace LogiCore.Application.Features.Vehicle.CreateVehicle;
 
-public record CreateVehicleCommand(string Plate, decimal MaxWeightCapacity, decimal MaxVolumeCapacity) : IRequest<Result<VehicleDto>>;
+public record CreateVehicleCommand(string Plate, string? Make, string? Model, decimal MaxWeightCapacity, decimal MaxVolumeCapacity) : IRequest<Result<VehicleDto>>;

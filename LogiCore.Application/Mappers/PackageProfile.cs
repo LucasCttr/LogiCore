@@ -15,7 +15,9 @@ public class PackageProfile : Profile
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
             .ForMember(dest => dest.InternalCode, opt => opt.MapFrom(src => src.InternalCode))
             .ForMember(dest => dest.OriginAddress, opt => opt.MapFrom(src => src.OriginAddress))
-            .ForMember(dest => dest.DestinationAddress, opt => opt.MapFrom(src => src.DestinationAddress));
+            .ForMember(dest => dest.DestinationAddress, opt => opt.MapFrom(src => src.DestinationAddress))
+            .ForMember(dest => dest.LastUpdatedAt, opt => opt.MapFrom(src => src.LastUpdatedAt))
+            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority));
 
         CreateMap<Domain.ValueObjects.Recipient, RecipientDto>();
         CreateMap<Domain.ValueObjects.Dimensions, DimensionsDto>()

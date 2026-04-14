@@ -14,6 +14,8 @@ public record PackageDto
 	public RecipientDto Recipient { get; init; } = null!;
 	public decimal Weight { get; init; }
 	public DateTime CreatedAt { get; init; }
+	public DateTime LastUpdatedAt { get; init; }
+	public PackagePriority Priority { get; init; }
 	public string? ApplicationUserId { get; init; }
 	public PackageStatus Status { get; init; }
 	public DimensionsDto? Dimensions { get; init; }

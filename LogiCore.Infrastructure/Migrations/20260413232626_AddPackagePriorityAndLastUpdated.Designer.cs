@@ -3,6 +3,7 @@ using System;
 using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260413232626_AddPackagePriorityAndLastUpdated")]
+    partial class AddPackagePriorityAndLastUpdated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,34 +108,24 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.Property<string>("ApplicationUserId")
                         .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.Property<Guid?>("AssignedVehicleId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LicenseNumber")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.HasIndex("AssignedVehicleId");
-
-                    b.ToTable("Drivers", (string)null);
+                    b.ToTable("Drivers");
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Location", b =>
@@ -372,17 +365,11 @@ namespace LogiCore.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Make")
-                        .HasColumnType("text");
-
                     b.Property<decimal>("MaxVolumeCapacity")
                         .HasColumnType("numeric");
 
                     b.Property<decimal>("MaxWeightCapacity")
                         .HasColumnType("numeric");
-
-                    b.Property<string>("Model")
-                        .HasColumnType("text");
 
                     b.Property<string>("Plate")
                         .IsRequired()
@@ -536,14 +523,7 @@ namespace LogiCore.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LogiCore.Domain.Entities.Vehicle", "AssignedVehicle")
-                        .WithMany()
-                        .HasForeignKey("AssignedVehicleId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("ApplicationUser");
-
-                    b.Navigation("AssignedVehicle");
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Package", b =>

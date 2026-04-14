@@ -24,7 +24,7 @@ public class CreateVehicleHandler : IRequestHandler<CreateVehicleCommand, Result
 
     public async Task<Result<VehicleDto>> Handle(CreateVehicleCommand request, CancellationToken cancellationToken)
     {
-        var vehicle = Domain.Entities.Vehicle.Create(request.Plate, request.MaxWeightCapacity, request.MaxVolumeCapacity);
+        var vehicle = Domain.Entities.Vehicle.Create(request.Plate, request.MaxWeightCapacity, request.MaxVolumeCapacity, request.Make, request.Model);
         await _vehicleRepository.AddAsync(vehicle);
         await _unitOfWork.CommitAsync(cancellationToken);
         return Result<VehicleDto>.Success(_mapper.Map<VehicleDto>(vehicle));

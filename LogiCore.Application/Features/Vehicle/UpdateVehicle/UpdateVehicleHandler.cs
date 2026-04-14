@@ -26,7 +26,7 @@ public class UpdateVehicleHandler : IRequestHandler<UpdateVehicleCommand, Result
         var existing = await _vehicleRepository.GetByIdAsync(request.Id);
         if (existing is null) return Result<VehicleDto>.Failure("Vehicle not found.", ErrorType.NotFound);
 
-        existing = _mapper.Map(request, existing);
+        existing.Update(request.Plate, request.Make, request.Model, request.MaxWeightCapacity, request.MaxVolumeCapacity, request.IsActive);
         await _vehicleRepository.UpdateAsync(existing);
         await _unitOfWork.CommitAsync(cancellationToken);
 

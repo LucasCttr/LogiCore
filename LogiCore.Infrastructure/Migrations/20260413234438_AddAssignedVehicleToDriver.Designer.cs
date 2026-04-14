@@ -3,6 +3,7 @@ using System;
 using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260413234438_AddAssignedVehicleToDriver")]
+    partial class AddAssignedVehicleToDriver
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -372,17 +375,11 @@ namespace LogiCore.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Make")
-                        .HasColumnType("text");
-
                     b.Property<decimal>("MaxVolumeCapacity")
                         .HasColumnType("numeric");
 
                     b.Property<decimal>("MaxWeightCapacity")
                         .HasColumnType("numeric");
-
-                    b.Property<string>("Model")
-                        .HasColumnType("text");
 
                     b.Property<string>("Plate")
                         .IsRequired()

@@ -12,9 +12,11 @@ public class Driver : IHasDomainEvents
     public string Name { get; private set; } = null!;
     public string LicenseNumber { get; private set; } = null!;
     public bool IsActive { get; private set; }
+    public Guid? AssignedVehicleId { get; private set; }
     public string ApplicationUserId { get; private set; } = null!; 
 
     public ApplicationUser? ApplicationUser { get; private set; }
+    public Vehicle? AssignedVehicle { get; private set; }
     private readonly List<Shipment> _shipments = new();
     public IReadOnlyCollection<Shipment> Shipments => _shipments.AsReadOnly();
 
@@ -62,6 +64,11 @@ public class Driver : IHasDomainEvents
         if (string.IsNullOrWhiteSpace(licenseNumber))
             throw new DomainException("License number is required.");
         LicenseNumber = licenseNumber.Trim();
+    }
+
+    public void AssignVehicle(Guid? vehicleId)
+    {
+        AssignedVehicleId = vehicleId;
     }
 
     public void AddDomainEvent(IDomainEvent domainEvent) => _domainEvents.Add(domainEvent);
