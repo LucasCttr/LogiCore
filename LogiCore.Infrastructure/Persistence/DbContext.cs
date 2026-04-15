@@ -11,6 +11,7 @@ public class LogiCoreDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Package> Packages => Set<Package>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<DriverDetails> DriverDetails => Set<DriverDetails>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<PackageStatusHistory> PackageStatusHistories => Set<PackageStatusHistory>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();

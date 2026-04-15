@@ -20,6 +20,9 @@ public class UserProfile : Profile
         CreateMap<RegisterUserCommand, ApplicationUser>()
             // Map the Email to UserName as well, since IdentityUser requires UserName
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email));
+
+        // Mapping for DriverDetails
+        CreateMap<DriverDetails, DriverDetailsDto>();
     }
 }
 

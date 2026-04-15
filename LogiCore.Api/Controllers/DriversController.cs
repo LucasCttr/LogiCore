@@ -10,6 +10,8 @@ using LogiCore.Application.Features.Driver.UpdateStatus;
 using LogiCore.Application.Features.Driver.Update;
 using LogiCore.Application.Features.Driver;
 using LogiCore.Application.Common.Models;
+using LogiCore.Application.Common.Interfaces.Persistence;
+using LogiCore.Application.Repositories;
 using LogiCore.Api.Models;
 
 namespace LogiCore.Api.Controllers;
@@ -20,10 +22,17 @@ namespace LogiCore.Api.Controllers;
 public class DriversController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IDriverRepository _driverRepository;
+    private readonly IDriverDetailsRepository _driverDetailsRepository;
 
-    public DriversController(IMediator mediator)
+    public DriversController(
+        IMediator mediator,
+        IDriverRepository driverRepository,
+        IDriverDetailsRepository driverDetailsRepository)
     {
         _mediator = mediator;
+        _driverRepository = driverRepository;
+        _driverDetailsRepository = driverDetailsRepository;
     }
 
     // POST: api/drivers/register (Admin only)
@@ -50,6 +59,27 @@ public class DriversController : ControllerBase
     public async Task<ActionResult<Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAvailable()
     {
         var result = await _mediator.Send(new LogiCore.Application.Features.Driver.GetAvailable.GetAvailableDriversQuery());
+        return result;
+    }
+
+    // GET: api/drivers/details (Admin only - new endpoint for drivers from DriverDetails table)
+    [Authorize(Roles = "Admin")]
+    [HttpGet("details")]
+    public async Task<ActionResult<Result<LogiCore.Application.Common.Models.PagedResult<LogiCore.Application.DTOs.DriverDetailsWithUserDto>>>> GetAllDetails([FromQuery] int page = 1, [FromQuery] int pageSize = 15, [FromQuery] string? search = null, [FromQuery] bool? isActive = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 15;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = new LogiCore.Application.Features.Driver.GetAll.GetAllDriverDetailsQuery
+        {
+            PageNumber = page,
+            PageSize = pageSize,
+            SearchTerm = search,
+            IsActive = isActive
+        };
+
+        var result = await _mediator.Send(query);
         return result;
     }
 
@@ -129,7 +159,33 @@ public class DriversController : ControllerBase
     [HttpPut("{id:guid}/assign-vehicle")]
     public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> AssignVehicle(Guid id, [FromBody] AssignVehicleRequest request)
     {
-        var command = new AssignVehicleToDriverCommand { DriverId = id, VehicleId = request.VehicleId };
+        // Try to use the provided ID as Driver ID
+        Guid driverId = id;
+        
+        // If Driver not found, try to find it as DriverDetails ID
+        var driver = await _driverRepository.GetByIdAsync(id);
+        if (driver is null)
+        {
+            // Try to get as DriverDetails
+            var driverDetails = await _driverDetailsRepository.GetByIdAsync(id);
+            if (driverDetails is not null)
+            {
+                // Try to find Driver by userId
+                driver = await _driverRepository.GetByApplicationUserIdAsync(driverDetails.UserId);
+                if (driver is not null)
+                {
+                    driverId = driver.Id;
+                }
+                else
+                {
+                    // Driver doesn't exist, we'll send the userId to the command handler
+                    // For now, use the DriverDetails ID - the handler will create Driver if needed
+                    driverId = id;
+                }
+            }
+        }
+        
+        var command = new AssignVehicleToDriverCommand { DriverId = driverId, VehicleId = request.VehicleId };
         var result = await _mediator.Send(command);
         return result;
     }

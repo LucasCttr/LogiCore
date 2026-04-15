@@ -17,6 +17,9 @@ public class SqlDriverRepository : IDriverRepository
     public async Task<Driver?> GetByApplicationUserIdAsync(string applicationUserId) =>
         await _context.Set<Driver>().Include(d => d.Shipments).Include(d => d.ApplicationUser).Include(d => d.AssignedVehicle).FirstOrDefaultAsync(d => d.ApplicationUserId == applicationUserId);
 
+    public async Task<Driver?> GetByAssignedVehicleIdAsync(Guid vehicleId) =>
+        await _context.Set<Driver>().Include(d => d.ApplicationUser).Include(d => d.AssignedVehicle).FirstOrDefaultAsync(d => d.AssignedVehicleId == vehicleId);
+
     public async Task<IEnumerable<Driver>> GetAllAsync() =>
         await _context.Set<Driver>().AsNoTracking().Include(d => d.ApplicationUser).Include(d => d.AssignedVehicle).ToListAsync();
 

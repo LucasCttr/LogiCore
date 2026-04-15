@@ -38,17 +38,18 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<
             foreach (var user in paginatedUsers)
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                var userDto = new UserDto(
-                    Id: user.Id,
-                    UserName: user.UserName ?? string.Empty,
-                    FirstName: user.FirstName,
-                    LastName: user.LastName,
-                    Email: user.Email ?? string.Empty,
-                    EmailConfirmed: user.EmailConfirmed,
-                    IsActive: !user.LockoutEnd.HasValue || user.LockoutEnd <= DateTimeOffset.UtcNow,
-                    Roles: roles,
-                    CreatedAt: user.CreatedAt
-                );
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? string.Empty,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Email = user.Email ?? string.Empty,
+                    EmailConfirmed = user.EmailConfirmed,
+                    IsActive = !user.LockoutEnd.HasValue || user.LockoutEnd <= DateTimeOffset.UtcNow,
+                    Roles = roles,
+                    CreatedAt = user.CreatedAt
+                };
                 userDtos.Add(userDto);
             }
 

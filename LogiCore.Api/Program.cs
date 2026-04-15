@@ -104,6 +104,7 @@ builder.Services.AddScoped<IShipmentRepository, SqlShipmentRepository>();
 builder.Services.AddScoped<IVehicleRepository, SqlVehicleRepository>();
 builder.Services.AddScoped<IDriverRepository, SqlDriverRepository>();
 builder.Services.AddScoped<ILocationRepository, SqlLocationRepository>();
+builder.Services.AddScoped<LogiCore.Application.Repositories.IDriverDetailsRepository, LogiCore.Infrastructure.Repositories.DriverDetailsRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Infrastructure services
@@ -111,6 +112,7 @@ builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.INotificati
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.IEmailService, LogiCore.Infrastructure.Services.SmtpEmailService>();
 builder.Services.AddTransient<LogiCore.Domain.Common.Interfaces.ICostCalculator, LogiCore.Infrastructure.Services.StandardCostCalculator>();
 builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.IMetricsService, LogiCore.Infrastructure.Services.DatabaseMetricsService>();
+builder.Services.AddScoped<LogiCore.Application.Services.IDriverDetailsService, LogiCore.Infrastructure.Services.DriverDetailsService>();
 // Background publisher that exports business metrics as Prometheus Gauges
 builder.Services.AddHostedService<LogiCore.Infrastructure.Services.PrometheusMetricsPublisher>();
 

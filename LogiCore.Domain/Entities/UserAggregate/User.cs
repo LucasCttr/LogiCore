@@ -11,4 +11,7 @@ public class ApplicationUser : IdentityUser
 
     // Relation: One user can have many packages
     public virtual ICollection<Package> Packages { get; set; } = new List<Package>();
+
+    // Relation: One-to-one with DriverDetails (only populated if user has Driver role)
+    public virtual DriverDetails? DriverDetails { get; set; }
 }

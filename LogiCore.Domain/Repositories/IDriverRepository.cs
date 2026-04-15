@@ -9,6 +9,7 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
     {
         Task<Driver?> GetByIdAsync(Guid id);
         Task<Driver?> GetByApplicationUserIdAsync(string applicationUserId);
+        Task<Driver?> GetByAssignedVehicleIdAsync(Guid vehicleId);
         Task<IEnumerable<Driver>> GetAllAsync();
         Task<IEnumerable<Driver>> GetAvailableAsync();
         Task<Driver> AddAsync(Driver driver);
