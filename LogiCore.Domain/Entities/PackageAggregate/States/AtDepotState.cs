@@ -9,6 +9,9 @@ internal class AtDepotState : PackageState
     public override void StartTransit(Package package)
         => package.SetStatus(PackageStatus.InTransit);
 
+    public override void Deliver(Package package)
+        => package.SetStatus(PackageStatus.Delivered);
+
     public override void DeliverToCenter(Package package)
         => package.SetStatus(PackageStatus.DeliveredToCenter);
 

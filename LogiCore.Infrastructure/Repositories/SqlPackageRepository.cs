@@ -60,6 +60,42 @@ public class SqlPackageRepository : IPackageRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<(PackageStatusHistory, LogiCore.Domain.Entities.ApplicationUser?, IList<string>)>> GetHistoryWithUserAsync(Guid packageId)
+    {
+        var histories = await _context.PackageStatusHistories
+            .AsNoTracking()
+            .Where(h => h.PackageId == packageId)
+            .OrderByDescending(h => h.OccurredAt)
+            .ToListAsync();
+
+        var result = new List<(PackageStatusHistory, LogiCore.Domain.Entities.ApplicationUser?, IList<string>)>();
+
+        foreach (var history in histories)
+        {
+            LogiCore.Domain.Entities.ApplicationUser? user = null;
+            IList<string> roles = new List<string>();
+
+            if (!string.IsNullOrEmpty(history.UserId))
+            {
+                user = await _context.Users.FindAsync(history.UserId);
+                if (user != null)
+                {
+                    roles = await _context.UserRoles
+                        .Where(ur => ur.UserId == user.Id)
+                        .Join(_context.Roles,
+                              ur => ur.RoleId,
+                              r => r.Id,
+                              (ur, r) => r.Name)
+                        .ToListAsync();
+                }
+            }
+
+            result.Add((history, user, roles));
+        }
+
+        return result;
+    }
+
     public Task<Package> UpdateAsync(Package package)
     {
         var entry = _context.Packages.Update(package);

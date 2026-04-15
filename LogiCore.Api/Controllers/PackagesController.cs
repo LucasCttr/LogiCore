@@ -10,6 +10,7 @@ using LogiCore.Application.Features.Packages;
 using LogiCore.Application.Features.Package.MarkPackageAsDelivered;
 using LogiCore.Application.Features.Package.GetPackageForScanner;
 using LogiCore.Application.Features.Package.MoveToDepot;
+using LogiCore.Application.Features.Package.CollectPackage;
 
 namespace LogiCore.Api.Controllers;
 
@@ -67,6 +68,15 @@ public class PackagesController : ControllerBase
     public async Task<ActionResult<Result<PackageDto>>> Deliver(Guid id)
     {
         var result = await _mediator.Send(new DeliverPackageCommand(id));
+        return result;
+    }
+
+    // POST: api/packages/{id}/collect (Driver collects package from seller - Pending → InTransit)
+    [HttpPost("{id:guid}/collect")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> Collect(Guid id)
+    {
+        var result = await _mediator.Send(new CollectPackageCommand(id));
         return result;
     }
 

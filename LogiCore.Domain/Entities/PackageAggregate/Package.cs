@@ -59,6 +59,17 @@ public class Package : IHasDomainEvents
         package._dimensions = dimensions;
         package.SyncState(package.Status);
 
+        // Generate initial status change event for audit trail
+        package.AddDomainEvent(new PackageStatusChangedEvent
+        {
+            PackageId = package.Id,
+            OldStatus = (PackageStatus)(-1), // -1 to indicate "created" (no previous status)
+            NewStatus = PackageStatus.Pending,
+            OccurredOn = now,
+            UserId = applicationUserId,
+            Notes = "Package registered in system"
+        });
+
         return package;
     }
 

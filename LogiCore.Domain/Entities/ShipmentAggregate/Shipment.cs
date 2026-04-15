@@ -259,12 +259,18 @@ public class Shipment : IHasDomainEvents
 
     /// <summary>
     /// Synchronizes all packages to AtDepot status when shipment arrives at destination.
+    /// Only moves packages that are InTransit. Pending packages remain Pending (not collected).
     /// </summary>
     private void SyncPackagesToDepot()
     {
         foreach (var package in _packages)
         {
-            package.MoveToDepot();
+            // Only move packages that are already in transit. Leave pending packages as-is.
+            if (package.Status == PackageStatus.InTransit)
+            {
+                package.MoveToDepot();
+            }
+            // Pending packages stay Pending - they weren't collected by the driver
         }
     }
 }

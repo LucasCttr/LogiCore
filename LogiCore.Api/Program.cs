@@ -171,7 +171,8 @@ builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.Security.ICurr
 builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.Security.IRefreshTokenService, LogiCore.Infrastructure.Security.RefreshTokenService>();
 
 // --- 5. MediatR & Validation ---
-builder.Services.AddMediatR(typeof(CreatePackageCommandHandler).Assembly);
+// Register MediatR handlers from both Application and Infrastructure assemblies
+builder.Services.AddMediatR(typeof(CreatePackageCommandHandler).Assembly, typeof(LogiCore.Infrastructure.Persistence.UnitOfWork).Assembly);
 // builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CreatePackageCommandValidator>();
 

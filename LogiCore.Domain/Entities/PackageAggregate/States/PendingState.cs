@@ -11,7 +11,8 @@ internal class PendingState : PackageState
 
     public override void StartTransit(Package package)
     {
-        throw new DomainException("Package must be in AtDepot status to start transit. Move package to depot first.");
+        // Driver picks up the package from seller and loads it in vehicle (Pending → InTransit)
+        package.SetStatus(PackageStatus.InTransit);
     }
 
     public override void MoveToDepot(Package package)

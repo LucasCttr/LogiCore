@@ -29,8 +29,16 @@ internal class PackageStatusChangedHandler : INotificationHandler<PackageStatusC
             FromStatus = notification.OldStatus,
             ToStatus = notification.NewStatus,
             OccurredAt = notification.OccurredOn,
-            EmployeeId = _currentUserService?.UserId,
-            InternalNotes = null
+            
+            // Use provided context, fallback to current user if not provided
+            UserId = notification.UserId ?? _currentUserService?.UserId,
+            LocationId = notification.LocationId,
+            ShipmentId = notification.ShipmentId,
+            Notes = notification.Notes,
+            
+            // Legacy fields for backward compatibility
+            EmployeeId = notification.UserId ?? _currentUserService?.UserId,
+            InternalNotes = notification.Notes
         };
 
         _dbContext.Add(history);
