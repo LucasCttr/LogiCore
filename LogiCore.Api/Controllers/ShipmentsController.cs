@@ -20,6 +20,7 @@ using LogiCore.Application.Features.Shipment.CancelShipment;
 using LogiCore.Application.Features.Shipment.GetPaged;
 using LogiCore.Application.Features.Shipment.AddPackagesToShipment;
 using LogiCore.Application.Features.Packages;
+using LogiCore.Application.Features.Shipment.StartShipment;
 
 namespace LogiCore.Api.Controllers;
 
@@ -127,6 +128,33 @@ public class ShipmentsController : ControllerBase
     public async Task<ActionResult<Result<bool>>> Dispatch(Guid id)
     {
         var result = await _mediator.Send(new DispatchShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/start (Driver only)
+    // Marks shipment as active (Dispatched)
+    // Driver can have only one active shipment at a time
+    // Packages are scanned separately using scanner endpoint
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id:guid}/start")]
+    public async Task<ActionResult<Result<bool>>> Start(Guid id)
+    {
+        // Ensure only assigned driver can start their shipments
+        var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
+        if (getResult == null) return NotFound();
+        if (!getResult.IsSuccess) return BadRequest(getResult);
+
+        var shipment = getResult.Value!;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+        var driver = driverResult.Value!;
+
+        if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
+
+        var result = await _mediator.Send(new StartShipmentCommand { ShipmentId = id });
         return result;
     }
 
