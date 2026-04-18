@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using AutoMapper;
 using LogiCore.Application.Features.Packages;
 using LogiCore.Application.Features.Package.MarkPackageAsDelivered;
+using LogiCore.Application.Features.Package.MarkPackageAsCollected;
 using LogiCore.Application.Features.Package.GetPackageForScanner;
 using LogiCore.Application.Features.Package.MoveToDepot;
 using LogiCore.Application.Features.Package.CollectPackage;
@@ -93,6 +94,16 @@ public class PackagesController : ControllerBase
     [HttpPost("{id:guid}/mark-delivered")]
     [Microsoft.AspNetCore.Authorization.Authorize]
     public async Task<ActionResult<Result<bool>>> MarkDelivered(Guid id, [FromBody] MarkPackageAsDeliveredCommand request)
+    {
+        request = request with { PackageId = id };
+        var result = await _mediator.Send(request);
+        return result;
+    }
+
+    // POST: api/packages/{id}/mark-collected (Driver - marks package as collected for Pickup shipments)
+    [HttpPost("{id:guid}/mark-collected")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> MarkCollected(Guid id, [FromBody] MarkPackageAsCollectedCommand request)
     {
         request = request with { PackageId = id };
         var result = await _mediator.Send(request);

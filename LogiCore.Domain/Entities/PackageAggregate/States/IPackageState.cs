@@ -6,6 +6,7 @@ internal interface IPackageState
 {
     PackageStatus Status { get; }
     void StartTransit(Package package);
+    void Collect(Package package);
     void MoveToDepot(Package package);
     void Deliver(Package package);
     void DeliverToCenter(Package package);

@@ -15,6 +15,12 @@ internal class PendingState : PackageState
         package.SetStatus(PackageStatus.InTransit);
     }
 
+    public override void Collect(Package package)
+    {
+        // Driver collects the package from customer/location (Pending → Collected) for Pickup shipments
+        package.SetStatus(PackageStatus.Collected);
+    }
+
     public override void MoveToDepot(Package package)
         => package.SetStatus(PackageStatus.AtDepot);
 

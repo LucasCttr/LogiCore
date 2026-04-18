@@ -10,6 +10,9 @@ internal abstract class PackageState : IPackageState
     public virtual void StartTransit(Package package)
         => throw new DomainException($"Cannot start transit from state {Status}.");
 
+    public virtual void Collect(Package package)
+        => throw new DomainException($"Cannot collect package from state {Status}.");
+
     public virtual void MoveToDepot(Package package)
         => throw new DomainException($"Cannot move package to depot from state {Status}.");
 

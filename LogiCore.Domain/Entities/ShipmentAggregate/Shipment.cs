@@ -25,15 +25,15 @@ public class Shipment : IHasDomainEvents
     public DateTime? ArrivedAt { get; private set; }
     // Optional destination location: NULL = last-mile delivery (door-to-door), NOT NULL = inter-depot shipment
     public int? DestinationLocationId { get; private set; }
+    private ShipmentType _shipmentType;
     private readonly List<Package> _packages = new();
     public IReadOnlyCollection<Package> Packages => _packages.AsReadOnly();
     public ShipmentStatus Status { get; private set; }
 
     /// <summary>
-    /// Determines the shipment type based on DestinationLocationId:
-    /// LastMile if null (final delivery to customer), Transfer if not null (inter-depot)
+    /// Gets the shipment type explicitly set during creation
     /// </summary>
-    public ShipmentType Type => DestinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile;
+    public ShipmentType Type => _shipmentType;
 
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -43,7 +43,7 @@ public class Shipment : IHasDomainEvents
 
     protected Shipment() { }
 
-    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? destinationLocationId = null)
+    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? destinationLocationId = null, ShipmentType? shipmentType = null)
     {
         if (string.IsNullOrWhiteSpace(routeCode))
             throw new DomainException("Route code is required.");
@@ -59,6 +59,9 @@ public class Shipment : IHasDomainEvents
         if (estimatedDelivery < DateTime.UtcNow)
             throw new DomainException("Estimated delivery date cannot be in the past.");
 
+        // Determine shipment type: explicit parameter or inferred from destinationLocationId
+        var type = shipmentType ?? (destinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile);
+
         return new Shipment
         {
             Id = Guid.NewGuid(),
@@ -69,7 +72,8 @@ public class Shipment : IHasDomainEvents
             Status = ShipmentStatus.Draft,
             CreatedAt = DateTime.UtcNow,
             EstimatedDelivery = estimatedDelivery,
-            DestinationLocationId = destinationLocationId
+            DestinationLocationId = destinationLocationId,
+            _shipmentType = type
         };
     }
 
@@ -203,7 +207,9 @@ public class Shipment : IHasDomainEvents
 
     /// <summary>
     /// Marks the shipment as arrived at final destination.
-    /// Synchronizes all packages to AtDepot status.
+    /// Synchronizes packages to AtDepot status based on shipment type:
+    /// - Pickup: Collected packages → AtDepot
+    /// - Other types: InTransit packages → AtDepot
     /// </summary>
     public void MarkAsArrived()
     {
@@ -213,8 +219,15 @@ public class Shipment : IHasDomainEvents
         ArrivedAt = DateTime.UtcNow;
         Status = ShipmentStatus.Arrived;
 
-        // Synchronize all packages to AtDepot status
-        SyncPackagesToDepot();
+        // Synchronize packages based on shipment type
+        if (Type == ShipmentType.Pickup)
+        {
+            SyncCollectedPackagesToDepot();
+        }
+        else
+        {
+            SyncPackagesToDepot();
+        }
 
         AddDomainEvent(new ShipmentArrivedEvent
         {
@@ -249,12 +262,21 @@ public class Shipment : IHasDomainEvents
     /// <summary>
     /// Synchronizes all packages to InTransit status when shipment is dispatched.
     /// </summary>
+    /// <summary>
+    /// Synchronizes all packages to InTransit status when dispatching non-Pickup shipments.
+    /// For Pickup shipments, packages remain their current state (Pending/Collected).
+    /// </summary>
     private void SyncPackagesToInTransit()
     {
-        foreach (var package in _packages)
+        // For non-Pickup shipments, move all packages to InTransit
+        if (Type != ShipmentType.Pickup)
         {
-            package.StartTransit();
+            foreach (var package in _packages)
+            {
+                package.StartTransit();
+            }
         }
+        // For Pickup shipments, packages stay in their current state (Pending/Collected)
     }
 
     /// <summary>
@@ -271,6 +293,21 @@ public class Shipment : IHasDomainEvents
                 package.MoveToDepot();
             }
             // Pending packages stay Pending - they weren't collected by the driver
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes all collected packages to AtDepot status when Pickup shipment completes.
+    /// This transitions packages from Collected → AtDepot when driver finishes the pickup.
+    /// </summary>
+    private void SyncCollectedPackagesToDepot()
+    {
+        foreach (var package in _packages)
+        {
+            if (package.Status == PackageStatus.Collected)
+            {
+                package.MoveToDepot();
+            }
         }
     }
 }

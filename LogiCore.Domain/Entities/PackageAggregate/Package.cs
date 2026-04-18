@@ -165,6 +165,7 @@ public class Package : IHasDomainEvents
                 PackageStatus.AtDepot => new States.AtDepotState(),
                 PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
                 PackageStatus.Returned => new States.ReturnedState(),
+                PackageStatus.Collected => new States.CollectedState(),
                 _ => throw new DomainException("Unknown package status")
             };
         }
@@ -183,6 +184,7 @@ public class Package : IHasDomainEvents
             PackageStatus.AtDepot => new States.AtDepotState(),
             PackageStatus.DeliveredToCenter => new States.DeliveredToCenterState(),
             PackageStatus.Returned => new States.ReturnedState(),
+            PackageStatus.Collected => new States.CollectedState(),
             _ => throw new DomainException("Unknown package status")
         };
     }
@@ -242,7 +244,8 @@ public class Package : IHasDomainEvents
         if (shipmentId == Guid.Empty)
             throw new DomainException("Invalid shipment ID.");
 
-        GetState().StartTransit(this);
+        // Only assign the shipment ID, don't change package status yet.
+        // Packages will transition to InTransit when the driver starts the shipment.
         CurrentShipmentId = shipmentId;
     }
 
@@ -259,6 +262,15 @@ public class Package : IHasDomainEvents
     public void StartTransit()
     {
         GetState().StartTransit(this);
+    }
+
+    /// <summary>
+    /// Marks the package as collected (for Pickup shipment types).
+    /// Delegates state validation to the current state via the State Pattern.
+    /// </summary>
+    public void Collect()
+    {
+        GetState().Collect(this);
     }
 
     public void Deliver()
