@@ -36,6 +36,13 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         // NOT NULL = inter-depot shipment to specific location
         builder.Property(e => e.DestinationLocationId)
             .IsRequired(false);
+        
+        // Configure relationship with Packages
+        // NOTE: CurrentShipmentId is the FK property in Package
+        builder.HasMany(e => e.Packages)
+            .WithOne()
+            .HasForeignKey("CurrentShipmentId")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

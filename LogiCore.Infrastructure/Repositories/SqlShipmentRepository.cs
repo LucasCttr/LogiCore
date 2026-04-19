@@ -3,14 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using LogiCore.Application.Common.Interfaces.Persistence;
 using LogiCore.Domain.Entities;
 using LogiCore.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace LogiCore.Infrastructure.Repositories;
 
 public class SqlShipmentRepository : IShipmentRepository
 {
     private readonly LogiCoreDbContext _context;
+    private readonly ILogger<SqlShipmentRepository> _logger;
 
-    public SqlShipmentRepository(LogiCoreDbContext context) => _context = context;
+    public SqlShipmentRepository(LogiCoreDbContext context, ILogger<SqlShipmentRepository> logger)
+    {
+        _context = context;
+        _logger = logger;
+    }
 
     public async Task<Shipment> AddAsync(Shipment shipment)
     {
@@ -109,7 +115,70 @@ public class SqlShipmentRepository : IShipmentRepository
 
     public Task<Shipment> UpdateAsync(Shipment shipment)
     {
-        var entry = _context.Shipments.Update(shipment);
-        return Task.FromResult(entry.Entity);
+        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Called for Shipment {shipment.Id} with {shipment.Packages.Count} packages");
+        
+        var shipmentPackageIds = new HashSet<Guid>(shipment.Packages.Select(p => p.Id));
+        
+        // Get all tracked Package entries
+        var trackedPackageEntries = _context.ChangeTracker
+            .Entries<Package>()
+            .Where(e => shipmentPackageIds.Contains(e.Entity.Id))
+            .ToList();
+        
+        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Found {trackedPackageEntries.Count} tracked package entries in ChangeTracker");
+        
+        // For each tracked package, manually copy property values using reflection
+        int modifiedCount = 0;
+        foreach (var trackedEntry in trackedPackageEntries)
+        {
+            var inMemPackage = shipment.Packages.FirstOrDefault(p => p.Id == trackedEntry.Entity.Id);
+            if (inMemPackage != null)
+            {
+                var trackedPackage = trackedEntry.Entity;
+                _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Processing Package {inMemPackage.Id}");
+                _logger.LogInformation($"  BEFORE copy - Status: {trackedPackage.Status}, LastUpdatedAt: {trackedPackage.LastUpdatedAt}, CurrentLocationId: {trackedPackage.CurrentLocationId}");
+                
+                // Use reflection to copy Status property (which has private setter)
+                var statusProp = typeof(Package).GetProperty("Status", 
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (statusProp != null && statusProp.CanRead )
+                {
+                    var newStatus = statusProp.GetValue(inMemPackage);
+                    _logger.LogInformation($"  Copying Status: {trackedPackage.Status} → {newStatus}");
+                    trackedEntry.CurrentValues["Status"] = newStatus;
+                }
+                
+                // Copy LastUpdatedAt
+                var lastUpdatedProp = typeof(Package).GetProperty("LastUpdatedAt",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (lastUpdatedProp != null && lastUpdatedProp.CanRead)
+                {
+                    var newLastUpdated = lastUpdatedProp.GetValue(inMemPackage);
+                    _logger.LogInformation($"  Copying LastUpdatedAt: {trackedPackage.LastUpdatedAt} → {newLastUpdated}");
+                    trackedEntry.CurrentValues["LastUpdatedAt"] = newLastUpdated;
+                }
+                
+                // Copy CurrentLocationId
+                var currentLocationProp = typeof(Package).GetProperty("CurrentLocationId",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (currentLocationProp != null && currentLocationProp.CanRead)
+                {
+                    var newCurrentLocation = currentLocationProp.GetValue(inMemPackage);
+                    _logger.LogInformation($"  Copying CurrentLocationId: {trackedPackage.CurrentLocationId} → {newCurrentLocation}");
+                    trackedEntry.CurrentValues["CurrentLocationId"] = newCurrentLocation;
+                }
+                
+                trackedEntry.State = EntityState.Modified;
+                modifiedCount++;
+                _logger.LogInformation($"  AFTER copy - Status: {trackedEntry.CurrentValues["Status"]}, LastUpdatedAt: {trackedEntry.CurrentValues["LastUpdatedAt"]}, CurrentLocationId: {trackedEntry.CurrentValues["CurrentLocationId"]}");
+                _logger.LogInformation($"  Marked as EntityState.Modified");
+            }
+        }
+        
+        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Total modified packages: {modifiedCount}");
+        
+        _context.Shipments.Update(shipment);
+        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Updated shipment in context. Returning.");
+        return Task.FromResult(shipment);
     }
 }

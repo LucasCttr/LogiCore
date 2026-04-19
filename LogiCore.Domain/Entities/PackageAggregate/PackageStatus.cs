@@ -9,5 +9,6 @@ public enum PackageStatus
     AtDepot = 4,
     DeliveredToCenter = 5,
     Returned = 6,
-    Collected = 7
+    Collected = 7,
+    LastMile = 8
 }

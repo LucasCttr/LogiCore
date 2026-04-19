@@ -27,6 +27,7 @@ public class PackageProfile : Profile
             .ForMember(dest => dest.DestinationAddress, opt => opt.MapFrom(src => src.DestinationAddress))
             .ForMember(dest => dest.LastUpdatedAt, opt => opt.MapFrom(src => src.LastUpdatedAt))
             .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority))
+            .ForMember(dest => dest.CurrentLocationId, opt => opt.MapFrom(src => src.CurrentLocationId))
             .ForMember(dest => dest.CurrentShipment, opt => opt.Ignore());
 
         CreateMap<Domain.ValueObjects.Recipient, RecipientDto>();

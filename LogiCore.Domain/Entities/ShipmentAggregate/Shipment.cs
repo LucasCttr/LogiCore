@@ -316,8 +316,9 @@ public class Shipment : IHasDomainEvents
 
     /// <summary>
     /// Finalizes the shipment based on its type:
-    /// - Pickup: Marks as Delivered without changing package statuses (remain as Collected/Pending)
-    /// - Transfer: Marks as Delivered and updates all packages to AtDepot at destination location
+    /// - Pickup: Marks as Delivered, moves Collected/Pending packages to AtDepot at origin location
+    /// - Pickup: Marks as Delivered and moves Collected/Pending packages to AtDepot at their current location
+    /// - Transfer: Marks as Delivered and updates all InTransit packages to AtDepot at destination location
     /// - LastMile: Marks as Delivered without changing package statuses
     /// </summary>
     public void FinalizeShipment()
@@ -329,19 +330,37 @@ public class Shipment : IHasDomainEvents
         Status = ShipmentStatus.Delivered;
 
         // Type-specific finalization logic
-        if (Type == ShipmentType.Transfer && DestinationLocationId.HasValue)
+        if (Type == ShipmentType.Pickup)
+        {
+            // For pickup: move collected/pending packages to AtDepot
+            // No specific origin location needed - packages use their current location or default
+            foreach (var package in _packages)
+            {
+                if ((package.Status == PackageStatus.Collected || package.Status == PackageStatus.Pending) 
+                    && package.CurrentLocationId.HasValue)
+                {
+                    package.MoveToDepotAt(package.CurrentLocationId.Value);
+                }
+                else if (package.Status == PackageStatus.Collected || package.Status == PackageStatus.Pending)
+                {
+                    // If no current location, just move to depot without location change
+                    package.MoveToDepot();
+                }
+            }
+        }
+        else if (Type == ShipmentType.Transfer && DestinationLocationId.HasValue)
         {
             // For depot-to-depot transfers: move all InTransit packages to AtDepot at destination
             foreach (var package in _packages)
             {
                 if (package.Status == PackageStatus.InTransit)
                 {
-                    package.MoveToDepot();
+                    package.MoveToDepotAt(DestinationLocationId.Value);
                 }
             }
         }
-        // For Pickup and LastMile: packages keep their current status
-        // (Collection/Delivery statuses are determined by individual package operations)
+        // For LastMile: packages keep their current status
+        // (Delivery statuses are determined by individual package operations)
 
         AddDomainEvent(new ShipmentDeliveredEvent
         {

@@ -34,4 +34,5 @@ public record PackageDetailDto
     public string? OriginAddress { get; init; }
     public string? DestinationAddress { get; init; }
     public CurrentShipmentDto? CurrentShipment { get; init; }
+    public int? CurrentLocationId { get; init; }
 }
