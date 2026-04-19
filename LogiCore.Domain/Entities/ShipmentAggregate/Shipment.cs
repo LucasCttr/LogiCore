@@ -316,7 +316,6 @@ public class Shipment : IHasDomainEvents
 
     /// <summary>
     /// Finalizes the shipment based on its type:
-    /// - Pickup: Marks as Delivered, moves Collected/Pending packages to AtDepot at origin location
     /// - Pickup: Marks as Delivered and moves Collected/Pending packages to AtDepot at their current location
     /// - Transfer: Marks as Delivered and updates all InTransit packages to AtDepot at destination location
     /// - LastMile: Marks as Delivered without changing package statuses
@@ -333,18 +332,22 @@ public class Shipment : IHasDomainEvents
         if (Type == ShipmentType.Pickup)
         {
             // For pickup: move collected/pending packages to AtDepot
-            // No specific origin location needed - packages use their current location or default
+            // Use shipment's destination location as fallback (where the pickup delivery was sent)
             foreach (var package in _packages)
             {
-                if ((package.Status == PackageStatus.Collected || package.Status == PackageStatus.Pending) 
-                    && package.CurrentLocationId.HasValue)
+                if (package.Status == PackageStatus.Collected || package.Status == PackageStatus.Pending)
                 {
-                    package.MoveToDepotAt(package.CurrentLocationId.Value);
-                }
-                else if (package.Status == PackageStatus.Collected || package.Status == PackageStatus.Pending)
-                {
-                    // If no current location, just move to depot without location change
-                    package.MoveToDepot();
+                    // Prefer package's current location, fallback to shipment's destination
+                    int? locationId = package.CurrentLocationId ?? DestinationLocationId;
+                    if (locationId.HasValue && locationId > 0)
+                    {
+                        package.MoveToDepotAt(locationId.Value);
+                    }
+                    else
+                    {
+                        // If no location available, just change status without location
+                        package.MoveToDepot();
+                    }
                 }
             }
         }

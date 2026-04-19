@@ -21,4 +21,5 @@ public record PackageDto
 	public DimensionsDto? Dimensions { get; init; }
 	public string? OriginAddress { get; init; }
 	public string? DestinationAddress { get; init; }
+	public int? CurrentLocationId { get; init; }
 }

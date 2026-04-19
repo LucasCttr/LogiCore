@@ -16,7 +16,8 @@ public class PackageProfile : Profile
             .ForMember(dest => dest.OriginAddress, opt => opt.MapFrom(src => src.OriginAddress))
             .ForMember(dest => dest.DestinationAddress, opt => opt.MapFrom(src => src.DestinationAddress))
             .ForMember(dest => dest.LastUpdatedAt, opt => opt.MapFrom(src => src.LastUpdatedAt))
-            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority));
+            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority))
+            .ForMember(dest => dest.CurrentLocationId, opt => opt.MapFrom(src => src.CurrentLocationId));
 
         CreateMap<Domain.Entities.Package, PackageDetailDto>()
             .ForMember(dest => dest.Recipient, opt => opt.MapFrom(src => src.Recipient))

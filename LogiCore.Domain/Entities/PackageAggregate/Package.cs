@@ -250,6 +250,17 @@ public class Package : IHasDomainEvents
     }
 
     /// <summary>
+    /// Marks the package as Collected.
+    /// Called when driver physically picks up the package during a route.
+    /// Note: CurrentLocationId is NOT set when collected - it's set only when arriving at AtDepot.
+    /// </summary>
+    public void CollectAt(int locationId)
+    {
+        // For now, just mark as collected. Location only assigned at AtDepot.
+        this.Collect();
+    }
+
+    /// <summary>
     /// Returns the package to its origin.
     /// Delegates state validation to the current state via the State Pattern.
     /// </summary>

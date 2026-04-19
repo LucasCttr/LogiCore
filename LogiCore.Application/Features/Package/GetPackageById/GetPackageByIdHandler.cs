@@ -41,8 +41,7 @@ public class GetPackageByIdHandler : IRequestHandler<GetPackageByIdQuery, Result
                     {
                         Id = shipment.Id,
                         Type = shipment.Type,
-                        DestinationName = shipment.Type == LogiCore.Domain.Entities.ShipmentType.Transfer ? 
-                            $"Depot (ID: {shipment.DestinationLocationId})" : null,
+                        DestinationName = null, // Frontend will resolve from locations list
                         DestinationLocationId = shipment.DestinationLocationId
                     }
                 };

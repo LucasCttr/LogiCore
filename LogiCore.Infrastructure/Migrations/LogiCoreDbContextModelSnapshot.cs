@@ -220,7 +220,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations");
+                    b.ToTable("Locations", (string)null);
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Package", b =>
@@ -335,7 +335,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PackageStatusHistories");
+                    b.ToTable("PackageStatusHistories", (string)null);
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.RefreshToken", b =>
@@ -365,7 +365,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("LogiCore.Domain.Entities.Shipment", b =>
@@ -456,7 +456,7 @@ namespace LogiCore.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vehicle");
+                    b.ToTable("Vehicle", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -639,58 +639,7 @@ namespace LogiCore.Infrastructure.Migrations
                         .WithMany("Packages")
                         .HasForeignKey("ShipmentId");
 
-                    b.OwnsOne("LogiCore.Domain.ValueObjects.Dimensions", "_dimensions", b1 =>
-                        {
-                            b1.Property<Guid>("PackageId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("HeightCm")
-                                .HasPrecision(18, 2)
-                                .HasColumnType("numeric(18,2)")
-                                .HasColumnName("HeightCm");
-
-                            b1.Property<decimal>("LengthCm")
-                                .HasPrecision(18, 2)
-                                .HasColumnType("numeric(18,2)")
-                                .HasColumnName("LengthCm");
-
-                            b1.Property<decimal>("WidthCm")
-                                .HasPrecision(18, 2)
-                                .HasColumnType("numeric(18,2)")
-                                .HasColumnName("WidthCm");
-
-                            b1.HasKey("PackageId");
-
-                            b1.ToTable("Packages");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PackageId");
-                        });
-
-                    b.OwnsOne("LogiCore.Domain.ValueObjects.Money", "_estimatedCost", b1 =>
-                        {
-                            b1.Property<Guid>("PackageId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<decimal>("Amount")
-                                .HasPrecision(18, 2)
-                                .HasColumnType("numeric(18,2)")
-                                .HasColumnName("EstimatedCostAmount");
-
-                            b1.Property<string>("Currency")
-                                .IsRequired()
-                                .HasColumnType("text")
-                                .HasColumnName("EstimatedCostCurrency");
-
-                            b1.HasKey("PackageId");
-
-                            b1.ToTable("Packages");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PackageId");
-                        });
-
-                    b.OwnsOne("LogiCore.Domain.ValueObjects.Recipient", "Recipient", b1 =>
+                    b.OwnsOne("LogiCore.Domain.Entities.Package.Recipient#LogiCore.Domain.ValueObjects.Recipient", "Recipient", b1 =>
                         {
                             b1.Property<Guid>("PackageId")
                                 .HasColumnType("uuid");
@@ -744,7 +693,58 @@ namespace LogiCore.Infrastructure.Migrations
 
                             b1.HasKey("PackageId");
 
-                            b1.ToTable("Packages");
+                            b1.ToTable("Packages", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PackageId");
+                        });
+
+                    b.OwnsOne("LogiCore.Domain.Entities.Package._dimensions#LogiCore.Domain.ValueObjects.Dimensions", "_dimensions", b1 =>
+                        {
+                            b1.Property<Guid>("PackageId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("HeightCm")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("HeightCm");
+
+                            b1.Property<decimal>("LengthCm")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("LengthCm");
+
+                            b1.Property<decimal>("WidthCm")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("WidthCm");
+
+                            b1.HasKey("PackageId");
+
+                            b1.ToTable("Packages", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PackageId");
+                        });
+
+                    b.OwnsOne("LogiCore.Domain.Entities.Package._estimatedCost#LogiCore.Domain.ValueObjects.Money", "_estimatedCost", b1 =>
+                        {
+                            b1.Property<Guid>("PackageId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("EstimatedCostAmount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("EstimatedCostCurrency");
+
+                            b1.HasKey("PackageId");
+
+                            b1.ToTable("Packages", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("PackageId");
