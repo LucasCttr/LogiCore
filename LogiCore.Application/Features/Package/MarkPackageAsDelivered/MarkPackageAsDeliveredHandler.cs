@@ -34,10 +34,13 @@ public class MarkPackageAsDeliveredHandler : IRequestHandler<MarkPackageAsDelive
             if (package == null)
                 return Result<bool>.Failure("Package not found.", ErrorType.NotFound);
 
-            // 3. Verify package is in AtDepot status (ready for delivery)
-            if (package.Status != LogiCore.Domain.Entities.PackageStatus.AtDepot)
+            // 3. Verify package can be delivered
+            // Allow: AtDepot (normal flow) or Pending (retry after attempt failed)
+            if (package.Status != LogiCore.Domain.Entities.PackageStatus.AtDepot &&
+                package.Status != LogiCore.Domain.Entities.PackageStatus.Pending &&
+                package.Status != LogiCore.Domain.Entities.PackageStatus.InTransit)
                 return Result<bool>.Failure(
-                    $"Cannot deliver a package in {package.Status} status. Only packages at depot can be delivered.",
+                    $"Cannot deliver a package in {package.Status} status.",
                     ErrorType.Conflict);
 
             // 4. Mark package as delivered (using domain method)

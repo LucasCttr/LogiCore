@@ -9,6 +9,7 @@ using AutoMapper;
 using LogiCore.Application.Features.Packages;
 using LogiCore.Application.Features.Package.MarkPackageAsDelivered;
 using LogiCore.Application.Features.Package.MarkPackageAsCollected;
+using LogiCore.Application.Features.Package.MarkAttemptFailed;
 using LogiCore.Application.Features.Package.GetPackageForScanner;
 using LogiCore.Application.Features.Package.MoveToDepot;
 using LogiCore.Application.Features.Package.CollectPackage;
@@ -103,10 +104,28 @@ public class PackagesController : ControllerBase
     // POST: api/packages/{id}/mark-collected (Driver - marks package as collected for Pickup shipments)
     [HttpPost("{id:guid}/mark-collected")]
     [Microsoft.AspNetCore.Authorization.Authorize]
-    public async Task<ActionResult<Result<bool>>> MarkCollected(Guid id, [FromBody] MarkPackageAsCollectedCommand request)
+    public async Task<ActionResult<Result<bool>>> MarkCollected(Guid id, [FromBody] MarkCollectedRequest? request = null)
     {
-        request = request with { PackageId = id };
-        var result = await _mediator.Send(request);
+        var command = new MarkPackageAsCollectedCommand
+        {
+            PackageId = id,
+            CollectionNotes = request?.CollectionNotes
+        };
+        var result = await _mediator.Send(command);
+        return result;
+    }
+
+    // POST: api/packages/{id}/mark-attempt-failed (Driver - records failed delivery attempt, keeps package as Pending)
+    [HttpPost("{id:guid}/mark-attempt-failed")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public async Task<ActionResult<Result<bool>>> MarkAttemptFailed(Guid id, [FromBody] AttemptFailedRequest? request = null)
+    {
+        var command = new MarkPackageAttemptFailedCommand
+        {
+            PackageId = id,
+            Reason = request?.Reason
+        };
+        var result = await _mediator.Send(command);
         return result;
     }
 
@@ -172,4 +191,14 @@ public class PackagesController : ControllerBase
         var result = await _mediator.Send(new GetPackageForScannerQuery(id));
         return result;
     }
+}
+
+public class MarkCollectedRequest
+{
+    public string? CollectionNotes { get; set; }
+}
+
+public class AttemptFailedRequest
+{
+    public string? Reason { get; set; }
 }

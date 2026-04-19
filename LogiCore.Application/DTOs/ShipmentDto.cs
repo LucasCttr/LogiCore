@@ -13,8 +13,12 @@ public class ShipmentDto
 	public DateTime EstimatedDelivery { get; set; }
 	public DateTime? ShippedAt { get; set; }
 	public DateTime? DeliveredAt { get; set; }
+	public DateTime? ArrivedAt { get; set; }
 	public decimal VehicleMaxWeightCapacity { get; set; }
 	public decimal VehicleMaxVolumeCapacity { get; set; }
+	public int? OriginLocationId { get; set; }
+	public int? DestinationLocationId { get; set; }
+	public ShipmentType? Type { get; set; }
 	public IEnumerable<Guid> PackageIds { get; set; } = Enumerable.Empty<Guid>();
 	public ShipmentStatus Status { get; set; }
 }

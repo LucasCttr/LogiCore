@@ -23,6 +23,8 @@ public class Shipment : IHasDomainEvents
     public DateTime? ShippedAt { get; private set; }
     public DateTime? DeliveredAt { get; private set; }
     public DateTime? ArrivedAt { get; private set; }
+    // Optional origin location: For Pickup shipments, the depot where packages are collected
+    public int? OriginLocationId { get; private set; }
     // Optional destination location: NULL = last-mile delivery (door-to-door), NOT NULL = inter-depot shipment
     public int? DestinationLocationId { get; private set; }
     private ShipmentType _shipmentType;
@@ -43,7 +45,7 @@ public class Shipment : IHasDomainEvents
 
     protected Shipment() { }
 
-    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? destinationLocationId = null, ShipmentType? shipmentType = null)
+    public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? originLocationId = null, int? destinationLocationId = null, ShipmentType? shipmentType = null)
     {
         if (string.IsNullOrWhiteSpace(routeCode))
             throw new DomainException("Route code is required.");
@@ -59,8 +61,8 @@ public class Shipment : IHasDomainEvents
         if (estimatedDelivery < DateTime.UtcNow)
             throw new DomainException("Estimated delivery date cannot be in the past.");
 
-        // Determine shipment type: explicit parameter or inferred from destinationLocationId
-        var type = shipmentType ?? (destinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile);
+        // Determine shipment type: explicit parameter or inferred from locationIds
+        var type = shipmentType ?? (originLocationId.HasValue ? ShipmentType.Pickup : destinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile);
 
         return new Shipment
         {
@@ -72,6 +74,7 @@ public class Shipment : IHasDomainEvents
             Status = ShipmentStatus.Draft,
             CreatedAt = DateTime.UtcNow,
             EstimatedDelivery = estimatedDelivery,
+            OriginLocationId = originLocationId,
             DestinationLocationId = destinationLocationId,
             _shipmentType = type
         };
@@ -309,5 +312,41 @@ public class Shipment : IHasDomainEvents
                 package.MoveToDepot();
             }
         }
+    }
+
+    /// <summary>
+    /// Finalizes the shipment based on its type:
+    /// - Pickup: Marks as Delivered without changing package statuses (remain as Collected/Pending)
+    /// - Transfer: Marks as Delivered and updates all packages to AtDepot at destination location
+    /// - LastMile: Marks as Delivered without changing package statuses
+    /// </summary>
+    public void FinalizeShipment()
+    {
+        if (Status != ShipmentStatus.Dispatched && Status != ShipmentStatus.Arrived)
+            throw new DomainException("Only dispatched or arrived shipments can be finalized.");
+
+        DeliveredAt = DateTime.UtcNow;
+        Status = ShipmentStatus.Delivered;
+
+        // Type-specific finalization logic
+        if (Type == ShipmentType.Transfer && DestinationLocationId.HasValue)
+        {
+            // For depot-to-depot transfers: move all InTransit packages to AtDepot at destination
+            foreach (var package in _packages)
+            {
+                if (package.Status == PackageStatus.InTransit)
+                {
+                    package.MoveToDepot();
+                }
+            }
+        }
+        // For Pickup and LastMile: packages keep their current status
+        // (Collection/Delivery statuses are determined by individual package operations)
+
+        AddDomainEvent(new ShipmentDeliveredEvent
+        {
+            ShipmentId = this.Id,
+            OccurredOn = DateTime.UtcNow
+        });
     }
 }

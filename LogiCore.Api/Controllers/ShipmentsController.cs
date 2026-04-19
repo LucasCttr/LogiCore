@@ -21,6 +21,7 @@ using LogiCore.Application.Features.Shipment.GetPaged;
 using LogiCore.Application.Features.Shipment.AddPackagesToShipment;
 using LogiCore.Application.Features.Packages;
 using LogiCore.Application.Features.Shipment.StartShipment;
+using LogiCore.Application.Features.Shipment.FinalizeShipment;
 
 namespace LogiCore.Api.Controllers;
 
@@ -214,6 +215,34 @@ public class ShipmentsController : ControllerBase
         if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
 
         var result = await _mediator.Send(new CompleteShipmentCommand { ShipmentId = id });
+        return result;
+    }
+
+    // POST: api/shipments/{id}/finalize (Driver only)
+    // Finalizes the shipment based on its type:
+    // - Pickup: marks as Delivered, packages keep their status
+    // - Transfer: marks as Delivered, updates packages to AtDepot at destination
+    // - LastMile: marks as Delivered, packages keep their status
+    [Authorize(Roles = "Driver")]
+    [HttpPost("{id:guid}/finalize")]
+    public async Task<ActionResult<Result<bool>>> Finalize(Guid id)
+    {
+        // ensure only assigned driver can finalize
+        var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
+        if (getResult == null) return NotFound();
+        if (!getResult.IsSuccess) return BadRequest(getResult);
+
+        var shipment = getResult.Value!;
+        var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(currentUserId)) return Forbid();
+
+        var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
+        if (driverResult == null || !driverResult.IsSuccess) return Forbid();
+        var driver = driverResult.Value!;
+
+        if (shipment.DriverId == null || driver.Id != shipment.DriverId.Value) return Forbid();
+
+        var result = await _mediator.Send(new FinalizeShipmentCommand(id));
         return result;
     }
 

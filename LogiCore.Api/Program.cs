@@ -106,6 +106,7 @@ builder.Services.AddScoped<IDriverRepository, SqlDriverRepository>();
 builder.Services.AddScoped<ILocationRepository, SqlLocationRepository>();
 builder.Services.AddScoped<LogiCore.Application.Repositories.IDriverDetailsRepository, LogiCore.Infrastructure.Repositories.DriverDetailsRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<LogiCore.Application.Common.Interfaces.Persistence.IPackageStatusHistoryService, LogiCore.Infrastructure.Services.PackageStatusHistoryService>();
 
 // Infrastructure services
 builder.Services.AddTransient<LogiCore.Application.Common.Interfaces.INotificationService, LogiCore.Infrastructure.Services.ConsoleNotificationService>();

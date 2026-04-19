@@ -65,6 +65,7 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
                 vehicle.MaxWeightCapacity,
                 vehicle.MaxVolumeCapacity,
                 request.EstimatedDelivery,
+                request.OriginLocationId,
                 request.DestinationLocationId,
                 request.Type);
 
