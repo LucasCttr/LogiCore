@@ -135,11 +135,19 @@ public class Package : IHasDomainEvents
 
     internal void SetStatus(PackageStatus status)
     {
-        if (Status == status) return;
+        Console.WriteLine($"[Package.SetStatus] Called for package {Id}. Current: {Status}, New: {status}");
+        
+        if (Status == status) 
+        {
+            Console.WriteLine($"[Package.SetStatus] Status already {status}, returning");
+            return;
+        }
 
         var old = Status;
         Status = status;
         LastUpdatedAt = DateTime.UtcNow;
+
+        Console.WriteLine($"[Package.SetStatus] Status changed from {old} to {status}");
 
         AddDomainEvent(new PackageStatusChangedEvent
         {

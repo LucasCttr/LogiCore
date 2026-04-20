@@ -162,6 +162,10 @@ public class Shipment : IHasDomainEvents
     /// </summary>
     public void DispatchShipment()
     {
+        Console.WriteLine($"[Domain.DispatchShipment] Called for shipment {Id}");
+        Console.WriteLine($"[Domain.DispatchShipment] Shipment Type: {Type}");
+        Console.WriteLine($"[Domain.DispatchShipment] Packages count: {_packages.Count}");
+        
         if (!_packages.Any())
             throw new DomainException("Cannot dispatch an empty shipment.");
 
@@ -171,8 +175,16 @@ public class Shipment : IHasDomainEvents
         Status = ShipmentStatus.Dispatched;
         if (ShippedAt == null) ShippedAt = DateTime.UtcNow;
 
+        Console.WriteLine($"[Domain.DispatchShipment] Calling SyncPackagesToInTransit");
+        
         // Synchronize all packages to InTransit status
         SyncPackagesToInTransit();
+
+        Console.WriteLine($"[Domain.DispatchShipment] After sync:");
+        foreach (var pkg in _packages)
+        {
+            Console.WriteLine($"[Domain.DispatchShipment]   - Package {pkg.Id}: {pkg.Status}");
+        }
 
         AddDomainEvent(new ShipmentDispatchedEvent
         {
@@ -271,13 +283,22 @@ public class Shipment : IHasDomainEvents
     /// </summary>
     private void SyncPackagesToInTransit()
     {
+        Console.WriteLine($"[Domain.SyncPackagesToInTransit] Called. Type: {Type}");
+        
         // For non-Pickup shipments, move all packages to InTransit
         if (Type != ShipmentType.Pickup)
         {
+            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Non-Pickup shipment, updating packages");
             foreach (var package in _packages)
             {
+                Console.WriteLine($"[Domain.SyncPackagesToInTransit] Before: Package {package.Id} Status = {package.Status}");
                 package.StartTransit();
+                Console.WriteLine($"[Domain.SyncPackagesToInTransit] After: Package {package.Id} Status = {package.Status}");
             }
+        }
+        else
+        {
+            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Pickup shipment, packages staying in current state");
         }
         // For Pickup shipments, packages stay in their current state (Pending/Collected)
     }

@@ -99,12 +99,30 @@ public class SqlShipmentRepository : IShipmentRepository
         return (items, total);
     }
 
-    public async Task<Shipment?> GetByIdAsync(Guid id) =>
-        await _context.Shipments
+    public async Task<Shipment?> GetByIdAsync(Guid id)
+    {
+        Console.WriteLine($"[GetByIdAsync] Loading shipment {id}");
+        var shipment = await _context.Shipments
             .Include(s => s.Packages)
             .Include(s => s.Vehicle)
             .Include(s => s.Driver)
             .FirstOrDefaultAsync(s => s.Id == id);
+        
+        if (shipment != null)
+        {
+            Console.WriteLine($"[GetByIdAsync] Shipment {id} found. Packages: {shipment.Packages.Count}");
+            foreach (var pkg in shipment.Packages)
+            {
+                Console.WriteLine($"[GetByIdAsync]   - Package {pkg.Id}: Status = {pkg.Status}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[GetByIdAsync] Shipment {id} not found");
+        }
+        
+        return shipment;
+    }
 
     public async Task<Shipment?> GetByPackageIdAsync(Guid packageId) =>
         await _context.Shipments
@@ -115,70 +133,96 @@ public class SqlShipmentRepository : IShipmentRepository
 
     public Task<Shipment> UpdateAsync(Shipment shipment)
     {
-        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Called for Shipment {shipment.Id} with {shipment.Packages.Count} packages");
+        Console.WriteLine($"[UpdateAsync] Called for shipment {shipment.Id} with {shipment.Packages.Count} packages");
         
-        var shipmentPackageIds = new HashSet<Guid>(shipment.Packages.Select(p => p.Id));
-        
-        // Get all tracked Package entries
-        var trackedPackageEntries = _context.ChangeTracker
-            .Entries<Package>()
-            .Where(e => shipmentPackageIds.Contains(e.Entity.Id))
-            .ToList();
-        
-        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Found {trackedPackageEntries.Count} tracked package entries in ChangeTracker");
-        
-        // For each tracked package, manually copy property values using reflection
-        int modifiedCount = 0;
-        foreach (var trackedEntry in trackedPackageEntries)
+        foreach (var pkg in shipment.Packages)
         {
-            var inMemPackage = shipment.Packages.FirstOrDefault(p => p.Id == trackedEntry.Entity.Id);
-            if (inMemPackage != null)
-            {
-                var trackedPackage = trackedEntry.Entity;
-                _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Processing Package {inMemPackage.Id}");
-                _logger.LogInformation($"  BEFORE copy - Status: {trackedPackage.Status}, LastUpdatedAt: {trackedPackage.LastUpdatedAt}, CurrentLocationId: {trackedPackage.CurrentLocationId}");
-                
-                // Use reflection to copy Status property (which has private setter)
-                var statusProp = typeof(Package).GetProperty("Status", 
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (statusProp != null && statusProp.CanRead )
-                {
-                    var newStatus = statusProp.GetValue(inMemPackage);
-                    _logger.LogInformation($"  Copying Status: {trackedPackage.Status} → {newStatus}");
-                    trackedEntry.CurrentValues["Status"] = newStatus;
-                }
-                
-                // Copy LastUpdatedAt
-                var lastUpdatedProp = typeof(Package).GetProperty("LastUpdatedAt",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (lastUpdatedProp != null && lastUpdatedProp.CanRead)
-                {
-                    var newLastUpdated = lastUpdatedProp.GetValue(inMemPackage);
-                    _logger.LogInformation($"  Copying LastUpdatedAt: {trackedPackage.LastUpdatedAt} → {newLastUpdated}");
-                    trackedEntry.CurrentValues["LastUpdatedAt"] = newLastUpdated;
-                }
-                
-                // Copy CurrentLocationId
-                var currentLocationProp = typeof(Package).GetProperty("CurrentLocationId",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (currentLocationProp != null && currentLocationProp.CanRead)
-                {
-                    var newCurrentLocation = currentLocationProp.GetValue(inMemPackage);
-                    _logger.LogInformation($"  Copying CurrentLocationId: {trackedPackage.CurrentLocationId} → {newCurrentLocation}");
-                    trackedEntry.CurrentValues["CurrentLocationId"] = newCurrentLocation;
-                }
-                
-                trackedEntry.State = EntityState.Modified;
-                modifiedCount++;
-                _logger.LogInformation($"  AFTER copy - Status: {trackedEntry.CurrentValues["Status"]}, LastUpdatedAt: {trackedEntry.CurrentValues["LastUpdatedAt"]}, CurrentLocationId: {trackedEntry.CurrentValues["CurrentLocationId"]}");
-                _logger.LogInformation($"  Marked as EntityState.Modified");
-            }
+            Console.WriteLine($"[UpdateAsync]   - Package {pkg.Id}: Status = {pkg.Status}");
         }
-        
-        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Total modified packages: {modifiedCount}");
-        
+
         _context.Shipments.Update(shipment);
-        _logger.LogInformation($"[SqlShipmentRepository.UpdateAsync] Updated shipment in context. Returning.");
+        
+        Console.WriteLine($"[UpdateAsync] Marked shipment as Updated in context");
         return Task.FromResult(shipment);
+    }
+
+    public async Task SyncPackagesInDatabaseAsync(Shipment shipment)
+    {
+        _logger.LogInformation($"[SqlShipmentRepository.SyncPackagesInDatabaseAsync] Syncing packages for shipment {shipment.Id}, Packages count: {shipment.Packages.Count}");
+        Console.WriteLine($"[SyncPackages] Starting sync for shipment {shipment.Id}");
+        Console.WriteLine($"[SyncPackages] Shipment Type: {shipment.Type}");
+        Console.WriteLine($"[SyncPackages] Total packages: {shipment.Packages.Count}");
+        
+        var packageIds = shipment.Packages.Select(p => p.Id).ToList();
+        if (!packageIds.Any())
+        {
+            Console.WriteLine($"[SyncPackages] No packages to sync");
+            _logger.LogInformation($"[SqlShipmentRepository.SyncPackagesInDatabaseAsync] No packages to sync");
+            return;
+        }
+
+        Console.WriteLine($"[SyncPackages] Package IDs to process: {string.Join(", ", packageIds)}");
+
+        // Get package Ids that need to be updated to specific statuses
+        var packageIdsToUpdateToInTransit = shipment.Packages
+            .Where(p => p.Status == PackageStatus.InTransit)
+            .Select(p => p.Id)
+            .ToList();
+
+        var packageIdsToUpdateToAtDepot = shipment.Packages
+            .Where(p => p.Status == PackageStatus.AtDepot)
+            .Select(p => p.Id)
+            .ToList();
+
+        Console.WriteLine($"[SyncPackages] Packages to update to InTransit: {packageIdsToUpdateToInTransit.Count}");
+        foreach (var id in packageIdsToUpdateToInTransit)
+        {
+            Console.WriteLine($"[SyncPackages]   - {id}");
+        }
+
+        Console.WriteLine($"[SyncPackages] Packages to update to AtDepot: {packageIdsToUpdateToAtDepot.Count}");
+
+        var now = DateTime.UtcNow;
+
+        // Update packages to InTransit
+        if (packageIdsToUpdateToInTransit.Any())
+        {
+            Console.WriteLine($"[SyncPackages] Executing ExecuteUpdateAsync for {packageIdsToUpdateToInTransit.Count} packages to InTransit");
+            _logger.LogInformation($"[SqlShipmentRepository.SyncPackagesInDatabaseAsync] Updating {packageIdsToUpdateToInTransit.Count} packages to InTransit");
+            
+            // First verify packages exist
+            var existingCount = await _context.Packages
+                .Where(p => packageIdsToUpdateToInTransit.Contains(p.Id))
+                .CountAsync();
+            Console.WriteLine($"[SyncPackages] Found {existingCount} packages in DB to update");
+            
+            var updated = await _context.Packages
+                .Where(p => packageIdsToUpdateToInTransit.Contains(p.Id))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.Status, PackageStatus.InTransit)
+                    .SetProperty(p => p.LastUpdatedAt, now)
+                );
+            
+            Console.WriteLine($"[SyncPackages] ExecuteUpdateAsync returned {updated} affected rows");
+        }
+
+        // Update packages to AtDepot
+        if (packageIdsToUpdateToAtDepot.Any())
+        {
+            Console.WriteLine($"[SyncPackages] Executing ExecuteUpdateAsync for {packageIdsToUpdateToAtDepot.Count} packages to AtDepot");
+            _logger.LogInformation($"[SqlShipmentRepository.SyncPackagesInDatabaseAsync] Updating {packageIdsToUpdateToAtDepot.Count} packages to AtDepot");
+            
+            var updated = await _context.Packages
+                .Where(p => packageIdsToUpdateToAtDepot.Contains(p.Id))
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.Status, PackageStatus.AtDepot)
+                    .SetProperty(p => p.LastUpdatedAt, now)
+                );
+            
+            Console.WriteLine($"[SyncPackages] Updated {updated} packages to AtDepot");
+        }
+
+        Console.WriteLine($"[SyncPackages] Sync complete");
+        _logger.LogInformation($"[SqlShipmentRepository.SyncPackagesInDatabaseAsync] Sync complete");
     }
 }

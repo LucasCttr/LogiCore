@@ -14,5 +14,6 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
         Task<(IEnumerable<Shipment> Items, int TotalCount)> GetPagedAsync(int page, int pageSize, string? sortBy = null, string? sortDir = null, string? status = null, string? q = null);
         Task<Shipment> AddAsync(Shipment shipment);
         Task<Shipment> UpdateAsync(Shipment shipment);
+        Task SyncPackagesInDatabaseAsync(Shipment shipment);
     }
 }
