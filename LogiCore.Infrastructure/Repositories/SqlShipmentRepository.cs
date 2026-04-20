@@ -57,10 +57,19 @@ public class SqlShipmentRepository : IShipmentRepository
             .Include(s => s.Driver)
             .AsQueryable();
 
-        // Filtering by status (parse to enum)
+        // Filtering by status (single enum, or InProgress = Loading | Dispatched for list tabs)
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (Enum.TryParse<ShipmentStatus>(status.Trim(), true, out var statusEnum))
+            var statusTrim = status.Trim();
+            if (string.Equals(statusTrim, "InProgress", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(s => s.Status == ShipmentStatus.Loading || s.Status == ShipmentStatus.Dispatched);
+            }
+            else if (string.Equals(statusTrim, "Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(s => s.Status == ShipmentStatus.Arrived || s.Status == ShipmentStatus.Delivered);
+            }
+            else if (Enum.TryParse<ShipmentStatus>(statusTrim, true, out var statusEnum))
             {
                 query = query.Where(s => s.Status == statusEnum);
             }
