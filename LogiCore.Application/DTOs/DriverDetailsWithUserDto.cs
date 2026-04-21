@@ -18,6 +18,9 @@ public record DriverDetailsWithUserDto
     public DateTime LicenseExpiry { get; init; }
     public DateTime InsuranceExpiry { get; init; }
     public Guid? AssignedVehicleId { get; init; }
+    public string? AssignedVehiclePlate { get; init; }
+    public string? AssignedVehicleMake { get; init; }
+    public string? AssignedVehicleModel { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
 }

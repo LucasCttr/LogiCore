@@ -45,10 +45,11 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         
         // Configure relationship with Packages
         // NOTE: CurrentShipmentId is the FK property in Package
+        // Use Restrict to prevent cascade delete while keeping packages associated with the shipment even after completion
         builder.HasMany(e => e.Packages)
             .WithOne()
             .HasForeignKey("CurrentShipmentId")
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

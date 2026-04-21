@@ -205,7 +205,8 @@ public class Package : IHasDomainEvents
     public void MoveToDepot()
     {
         GetState().MoveToDepot(this);
-        CurrentShipmentId = null; // Al entrar al depósito, baja del camión
+        // Keep shipment association for historical visibility in shipment details.
+        // This prevents PackageIds from disappearing after shipment completion.
     }
 
     /// <summary>

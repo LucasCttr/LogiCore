@@ -3,6 +3,7 @@ using System;
 using LogiCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LogiCore.Infrastructure.Migrations
 {
     [DbContext(typeof(LogiCoreDbContext))]
-    partial class LogiCoreDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421211116_ChangeShipmentPackageDeleteBehaviorToSetNull")]
+    partial class ChangeShipmentPackageDeleteBehaviorToSetNull
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -639,7 +642,7 @@ namespace LogiCore.Infrastructure.Migrations
                     b.HasOne("LogiCore.Domain.Entities.Shipment", null)
                         .WithMany("Packages")
                         .HasForeignKey("CurrentShipmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.OwnsOne("LogiCore.Domain.ValueObjects.Dimensions", "_dimensions", b1 =>
                         {
