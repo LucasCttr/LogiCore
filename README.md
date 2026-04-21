@@ -1,98 +1,96 @@
-# LogiCore — Learning Project
+# LogiCore - Proyecto de Aprendizaje
 
-## Description
-- **Purpose**: Example project for learning and practicing clean architecture, RESTful APIs, and .NET best practices.
-- **What it does**: Implements an API for managing drivers, vehicles, locations, packages, and shipments with separated layers for `Api`, `Application`, `Domain`, and `Infrastructure`.
-  - **Role-Based Access**: Admin and Driver roles with JWT authentication
-  - **Package Collection Workflow**: Driver-initiated pickup from sellers with full traceability (Pending → InTransit → AtDepot → Delivered)
-  - **Smart State Management**: Handles packages not collected in shipment arrive/complete operations
-  - **Shipment Lifecycle**: From creation through dispatch, arrival, and completion with automatic package synchronization
-- **Frontend in progress:** [Next.js: https://github.com/LucasCttr/logicore-front]
+## Descripcion
+- **Proposito**: Proyecto de ejemplo para aprender y practicar arquitectura limpia, APIs RESTful y buenas practicas en .NET.
+- **Que hace**: Implementa una API para gestionar conductores, vehiculos, ubicaciones, paquetes y envios con capas separadas en `Api`, `Application`, `Domain` e `Infrastructure`.
+  - **Acceso basado en roles**: Roles Admin y Driver con autenticacion JWT.
+  - **Flujo de recoleccion de paquetes**: Recoleccion iniciada por el conductor desde vendedores con trazabilidad completa (Pending -> InTransit -> AtDepot -> Delivered).
+  - **Gestion inteligente de estado**: Maneja paquetes no recolectados en operaciones de llegada/finalizacion de envios.
+  - **Ciclo de vida del envio**: Desde la creacion hasta despacho, llegada y finalizacion con sincronizacion automatica de paquetes.
+- **Frontend en progreso**: [Next.js: https://github.com/LucasCttr/logicore-front]
 
-## Architecture
-- **Pattern**: Clean Architecture / Onion — separates responsibilities across projects `LogiCore.Api`, `LogiCore.Application`, `LogiCore.Domain`, and `LogiCore.Infrastructure`.
-- **Organization**: `Controllers` in the API layer, `Features` and `DTOs` in Application, entities and business rules in Domain, data access and external services in Infrastructure.
+## Arquitectura
+- **Patron**: Clean Architecture / Onion - separa responsabilidades entre los proyectos `LogiCore.Api`, `LogiCore.Application`, `LogiCore.Domain` y `LogiCore.Infrastructure`.
+- **Organizacion**: `Controllers` en la capa API, `Features` y `DTOs` en Application, entidades y reglas de negocio en Domain, acceso a datos y servicios externos en Infrastructure.
 
-## Tech Stack
-- **Language**: `C#`
+## Stack Tecnologico
+- **Lenguaje**: `C#`
 - **Runtime / Framework**: `.NET 8 (net8.0)`
-- **Project Type**: `ASP.NET Core Web API`
-- **Database**: `PostgreSQL` (provided by Npgsql / EF Core)
-- **Containers**: `Docker` + `docker-compose` (`Dockerfile` and `docker-compose.yml` included)
+- **Tipo de proyecto**: `ASP.NET Core Web API`
+- **Base de datos**: `PostgreSQL` (provista por Npgsql / EF Core)
+- **Contenedores**: `Docker` + `docker-compose` (`Dockerfile` y `docker-compose.yml` incluidos)
 
-## Main Libraries and Tools
-- **AutoMapper**: mapping between entities and DTOs (`AutoMapper`, `AutoMapper.Extensions.Microsoft.DependencyInjection`).
-- **MediatR**: mediator to implement CQRS patterns and separate application logic.
-- **FluentValidation**: DTO validation at entry level (`FluentValidation.AspNetCore`).
-- **Entity Framework Core + Npgsql**: data access and EF Core migrations with PostgreSQL provider.
-- **Serilog**: structured logging (`Serilog.AspNetCore`, `Serilog.Sinks.Console`).
-- **Swashbuckle / OpenAPI**: automatic API documentation.
-- **Hellang ProblemDetails**: consistent error handling and problem details responses.
-- **Prometheus**: metrics (`prometheus-net`) for monitoring.
+## Librerias y Herramientas Principales
+- **AutoMapper**: mapeo entre entidades y DTOs (`AutoMapper`, `AutoMapper.Extensions.Microsoft.DependencyInjection`).
+- **MediatR**: mediador para implementar patrones CQRS y separar la logica de aplicacion.
+- **FluentValidation**: validacion de DTOs al ingreso (`FluentValidation.AspNetCore`).
+- **Entity Framework Core + Npgsql**: acceso a datos y migraciones de EF Core con proveedor PostgreSQL.
+- **Serilog**: logging estructurado (`Serilog.AspNetCore`, `Serilog.Sinks.Console`).
+- **Swashbuckle / OpenAPI**: documentacion automatica de la API.
+- **Hellang ProblemDetails**: manejo consistente de errores y respuestas problem details.
+- **Prometheus**: metricas (`prometheus-net`) para monitoreo.
 
-## Repository Structure (Summary)
-- **LogiCore.Api/**: entry point, controllers, middlewares, filters, and configurations (appsettings).
-  - Controllers include endpoints for package collection workflow: `/packages/{id}/collect`, `/packages/{id}/deliver`, `/packages/{id}/mark-delivered`
-- **LogiCore.Application/**: DTOs, features, mappers, and orchestration rules.
-  - **Features**: Includes CollectPackage, MoveToDepot, MarkPackageAsDelivered command handlers
-- **LogiCore.Domain/**: entities, value objects, exceptions, and contracts.
-  - **Package States**: PendingState (allows StartTransit), AtDepotState (allows Deliver), InTransitState, DeliveredState, etc.
-  - **Shipment State Management**: MarkAsArrived syncs only InTransit packages to AtDepot; Pending packages remain unchanged
-- **LogiCore.Infrastructure/**: repository implementations, EF context, external services, and integrations.
-- **publish/**: deployment-ready artifacts.
+## Estructura del Repositorio (Resumen)
+- **LogiCore.Api/**: punto de entrada, controllers, middlewares, filtros y configuraciones (appsettings).
+  - Los controllers incluyen endpoints para el flujo de recoleccion de paquetes: `/packages/{id}/collect`, `/packages/{id}/deliver`, `/packages/{id}/mark-delivered`.
+- **LogiCore.Application/**: DTOs, features, mappers y reglas de orquestacion.
+  - **Features**: incluye handlers de comandos CollectPackage, MoveToDepot y MarkPackageAsDelivered.
+- **LogiCore.Domain/**: entidades, value objects, excepciones y contratos.
+  - **Estados de paquete**: PendingState (permite StartTransit), AtDepotState (permite Deliver), InTransitState, DeliveredState, etc.
+  - **Gestion de estado de envio**: MarkAsArrived sincroniza solo paquetes InTransit a AtDepot; los Pending quedan sin cambios.
+- **LogiCore.Infrastructure/**: implementaciones de repositorios, contexto EF, servicios externos e integraciones.
+- **publish/**: artefactos listos para despliegue.
 
-## Best Practices and Conventions Applied
-- **Layer Separation**: avoids dependency leakage between layers; `Api` only references `Application` and `Infrastructure` through interfaces.
-- **Dependency Injection**: all dependencies registered in central `Program.cs`/startup.
-- **DTOs and AutoMapper**: avoid exposing entities directly via API.
-- **Single-Layer Validation**: `FluentValidation` for validating inputs before reaching business logic.
-- **Centralized Error Handling**: global middleware to transform exceptions into `ProblemDetails` (Hellang).
-- **Structured Logging**: `Serilog` usage for traceability and search capabilities.
-- **Metrics and Observability**: metrics endpoints for Prometheus.
-- **Documentation**: integrated OpenAPI/Swagger for testing and consumption.
-- **Environment Configuration**: `appsettings.json`, `appsettings.Development.json`, `appsettings.Production.json`.
-- **Partial CQRS Pattern**: separation of commands and queries via `MediatR` when applicable.
-- **Migrations Usage**: manage with EF Core to evolve PostgreSQL schema.
-- **State Machine Pattern**: Package entity implements state-aware transitions (Pending → InTransit → AtDepot → Delivered) via polymorphic state objects.
-- **Smart Synchronization**: Shipment arrival only syncs collected packages (InTransit); pending packages remain pending for retry collection.
+## Buenas Practicas y Convenciones Aplicadas
+- **Separacion de capas**: evita fugas de dependencias entre capas; `Api` solo referencia `Application` e `Infrastructure` mediante interfaces.
+- **Inyeccion de dependencias**: todas las dependencias registradas de forma central en `Program.cs`/startup.
+- **DTOs y AutoMapper**: evita exponer entidades directamente por API.
+- **Validacion en una sola capa**: `FluentValidation` para validar entradas antes de llegar a la logica de negocio.
+- **Manejo centralizado de errores**: middleware global para transformar excepciones a `ProblemDetails` (Hellang).
+- **Logging estructurado**: uso de `Serilog` para trazabilidad y busqueda.
+- **Metricas y observabilidad**: endpoints de metricas para Prometheus.
+- **Documentacion**: OpenAPI/Swagger integrado para pruebas y consumo.
+- **Configuracion por entorno**: `appsettings.json`, `appsettings.Development.json`, `appsettings.Production.json`.
+- **Patron CQRS parcial**: separacion de comandos y consultas via `MediatR` cuando aplica.
+- **Uso de migraciones**: gestion con EF Core para evolucionar el esquema en PostgreSQL.
+- **Patron State Machine**: la entidad Package implementa transiciones segun estado (Pending -> InTransit -> AtDepot -> Delivered) via objetos de estado polimorficos.
+- **Sincronizacion inteligente**: la llegada de envio solo sincroniza paquetes recolectados (InTransit); los pendientes permanecen pending para reintento.
 
+## Patrones Implementados
+A continuacion se listan los patrones estructurales y de diseno aplicados en el proyecto, con ejemplos y enlaces a implementaciones relevantes dentro del repositorio.
 
-## Implemented Patterns
-Below are the structural and design patterns applied in the project, with examples and links to relevant implementations within the repo.
+- **Repository Pattern**: contratos en la capa de dominio y adaptadores en `Infrastructure` para acceso a datos. Ejemplos: [LogiCore.Domain/Repositories/IPackageRepository.cs](LogiCore.Domain/Repositories/IPackageRepository.cs#L1) e implementacion registrada en [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L70).
 
-- **Repository Pattern**: contracts in the domain layer and adapters in `Infrastructure` for data access. Examples: [LogiCore.Domain/Repositories/IPackageRepository.cs](LogiCore.Domain/Repositories/IPackageRepository.cs#L1) and implementation registered in [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L70).
+- **Unit of Work**: centraliza commits y transacciones, garantizando consistencia y publicando eventos de dominio antes de persistir cambios. Implementacion: [LogiCore.Infrastructure/Persistence/UnitOfWork.cs](LogiCore.Infrastructure/Persistence/UnitOfWork.cs#L1).
 
-- **Unit of Work**: centralizes commits and transactions, ensuring consistency and publishing domain events before persisting changes. Implementation: [LogiCore.Infrastructure/Persistence/UnitOfWork.cs](LogiCore.Infrastructure/Persistence/UnitOfWork.cs#L1).
+- **Domain Events / Event Dispatcher**: entidades que emiten eventos de dominio y handlers desacoplados (publicados via MediatR). Interfaz: [LogiCore.Domain/Common/Interfaces/IDomainEvent.cs](LogiCore.Domain/Common/Interfaces/IDomainEvent.cs#L1). Handlers de ejemplo: [LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs](LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs#L1).
 
-- **Domain Events / Event Dispatcher**: entities that emit domain events and decoupled handlers (published via MediatR). Interface: [LogiCore.Domain/Common/Interfaces/IDomainEvent.cs](LogiCore.Domain/Common/Interfaces/IDomainEvent.cs#L1). Example handlers: [LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs](LogiCore.Infrastructure/Events/PackageStatusChangedHandler.cs#L1).
+- **Mediator / CQRS (Parcial)**: uso de MediatR para comandos y consultas; desacopla controllers de la logica de aplicacion y facilita testing. Registro y uso: [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L127) y controllers (por ejemplo [LogiCore.Api/Controllers/PackagesController.cs](LogiCore.Api/Controllers/PackagesController.cs#L1)).
+  - Nuevos comandos: `CollectPackageCommand` para flujo de recoleccion iniciado por conductor.
 
-- **Mediator / CQRS (Partial)**: MediatR usage for commands and queries; decouples controllers from application logic and facilitates testing. Registration and usage: [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L127) and controllers (e.g. [LogiCore.Api/Controllers/PackagesController.cs](LogiCore.Api/Controllers/PackagesController.cs#L1)).
-  - New commands: `CollectPackageCommand` for driver-initiated pickup workflow
+- **Pipeline Behaviors (MediatR)**: behaviors en el pipeline para validacion y acciones transversales (por ejemplo commit). Implementaciones: [LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs](LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs#L1) y [LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs](LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs#L1).
 
-- **Pipeline Behaviors (MediatR)**: behaviors in the pipeline for validation and cross-cutting actions (e.g. commit). Implementations: [LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs](LogiCore.Application/Common/Behaviors/RequestValidationBehavior.cs#L1) and [LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs](LogiCore.Application/Common/Behaviors/SaveChangesBehavior.cs#L1).
+- **Validation Pipeline**: `FluentValidation` integrado como paso de pipeline para asegurar entradas validas antes de ejecutar logica.
 
-- **Validation Pipeline**: `FluentValidation` integrated as a pipeline step to ensure valid input before executing logic.
+- **Mapper (Adapter)**: perfiles de `AutoMapper` para transformar entidades a DTOs y viceversa; ejemplo: [LogiCore.Application/Mappers/DriverProfile.cs](LogiCore.Application/Mappers/DriverProfile.cs#L1).
 
-- **Mapper (Adapter)**: `AutoMapper` profiles to transform entities to DTOs and vice versa; example: [LogiCore.Application/Mappers/DriverProfile.cs](LogiCore.Application/Mappers/DriverProfile.cs#L1).
+- **Middleware Pipeline / Global Exception Handling**: middleware centralizado que transforma excepciones en `ProblemDetails` y mapea codigos HTTP de forma uniforme. Ver: [LogiCore.Api/Middlewares/GlobalExceptionHandler.cs](LogiCore.Api/Middlewares/GlobalExceptionHandler.cs#L1).
 
-- **Middleware Pipeline / Global Exception Handling**: centralized middleware that transforms exceptions into `ProblemDetails` and maps HTTP codes uniformly. See: [LogiCore.Api/Middlewares/GlobalExceptionHandler.cs](LogiCore.Api/Middlewares/GlobalExceptionHandler.cs#L1).
+- **Action Filters**: filtros de accion para estandarizar respuestas y comportamientos transversales. Ejemplo: [LogiCore.Api/Filters/ResultActionFilter.cs](LogiCore.Api/Filters/ResultActionFilter.cs#L1).
 
-- **Action Filters**: action filters to standardize responses and cross-cutting behaviors. Example: [LogiCore.Api/Filters/ResultActionFilter.cs](LogiCore.Api/Filters/ResultActionFilter.cs#L1).
+- **State Machine Pattern**: la entidad Package implementa objetos de estado polimorficos (PendingState, AtDepotState, InTransitState, DeliveredState) que manejan transiciones permitidas:
+  - PendingState maneja la recoleccion por conductor via `StartTransit()`.
+  - AtDepotState ahora permite operaciones de transferencia y entrega.
+  - La llegada de envio sincroniza inteligentemente solo paquetes recolectados, dejando los pendientes sin cambios.
 
-- **State Machine Pattern**: Package entity implements polymorphic state objects (PendingState, AtDepotState, InTransitState, DeliveredState) that handle allowed transitions:
-  - PendingState handles driver collection via `StartTransit()`
-  - AtDepotState now allows both transfer and delivery operations
-  - Shipment arrival smartly syncs only collected packages, leaving pending packages unchanged
+- **Observer / Instrumentation**: servicios y adaptadores para metricas (Prometheus) y observabilidad, por ejemplo [LogiCore.Infrastructure/Services/DatabaseMetricsService.cs](LogiCore.Infrastructure/Services/DatabaseMetricsService.cs#L1).
 
-- **Observer / Instrumentation**: services and adapters for metrics (Prometheus) and observability, for example [LogiCore.Infrastructure/Services/DatabaseMetricsService.cs](LogiCore.Infrastructure/Services/DatabaseMetricsService.cs#L1).
+- **Adapter / Abstraction for External Concerns**: interfaces en `Application` con implementaciones en `Infrastructure` (repositorios, servicios externos, servicio de usuario actual), registradas en DI en [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L67-L75), facilitando sustitucion y testing.
 
-- **Adapter / Abstraction for External Concerns**: interfaces in `Application` with implementations in `Infrastructure` (repositories, external services, current user service), registered in DI in [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L67-L75), facilitating substitution and testing.
-
-
-## How to Run Locally
-1. Ensure you have `.NET 8 SDK`, `docker`, and `docker-compose` installed (optional for containers).
-2. Copy/adjust the connection string in `LogiCore.Api/appsettings.Development.json`.
-3. Build and run from the repo root:
+## Como Ejecutarlo en Local
+1. Asegurate de tener instalado `.NET 8 SDK`, `docker` y `docker-compose` (opcional para contenedores).
+2. Copia/ajusta la connection string en `LogiCore.Api/appsettings.Development.json`.
+3. Compila y ejecuta desde la raiz del repositorio:
 
 ```bash
 dotnet restore
@@ -100,30 +98,28 @@ dotnet build
 dotnet run --project LogiCore.Api/LogiCore.Api.csproj
 ```
 
-4. Alternative with Docker:
+4. Alternativa con Docker:
 
 ```bash
 docker-compose up --build
 ```
 
-5. OpenAPI documentation is usually available at `http://localhost:5000/swagger` (depending on `Program.cs` configuration).
+5. La documentacion OpenAPI suele estar disponible en `http://localhost:5000/swagger` (segun configuracion de `Program.cs`).
 
 ## Deployment
-- Contains `Dockerfile` and `docker-compose.yml` for packaging. There's also a `publish/` folder with ready-to-deploy artifacts.
-- There's a `migrations.sql` file that can help in environments where automatic migrations are not applied.
+- Incluye `Dockerfile` y `docker-compose.yml` para empaquetado. Tambien existe una carpeta `publish/` con artefactos listos para desplegar.
+- Hay un archivo `migrations.sql` que puede ayudar en entornos donde no se aplican migraciones automaticas.
 
-## Next Steps
-- Finalize frontend.
-- Optimal route implementation via heuristics.
-- Add unit and integration tests (xUnit / NUnit + Testcontainers for DB).
-- Integrate CI pipeline (GitHub Actions) running `dotnet build`, `dotnet test`, and static analysis.
-- Add security policies: headers, rate limiting, and endpoint tests.
- 
-## Redis — Address Autocomplete
+## Proximos Pasos
+- Finalizar frontend.
+- Implementacion de rutas optimas mediante heuristicas.
+- Agregar tests unitarios y de integracion (xUnit / NUnit + Testcontainers para DB).
+- Integrar pipeline de CI (GitHub Actions) ejecutando `dotnet build`, `dotnet test` y analisis estatico.
+- Agregar politicas de seguridad: headers, rate limiting y pruebas de endpoints.
 
-- **What it does**: Redis is used as a lexicographic ZSET for autocompleting frequent addresses.
-- **Endpoint**: `GET /api/addresses/autocomplete?q=Av.%20Riv` returns up to 5 suggestions.
-- **Seeding**: on development startup the service reads `Locations` and loads addresses into the `addresses:zset` ZSET.
-- **Deployment**: `docker-compose.yml` includes a `redis` service (port 6379).
+## Redis - Autocompletado de Direcciones
 
-
+- **Que hace**: Redis se usa como ZSET lexicografico para autocompletar direcciones frecuentes.
+- **Endpoint**: `GET /api/addresses/autocomplete?q=Av.%20Riv` devuelve hasta 5 sugerencias.
+- **Seeding**: al iniciar en desarrollo, el servicio lee `Locations` y carga direcciones en el ZSET `addresses:zset`.
+- **Deployment**: `docker-compose.yml` incluye un servicio `redis` (puerto 6379).
