@@ -87,38 +87,12 @@ A continuacion se listan los patrones estructurales y de diseno aplicados en el 
 
 - **Adapter / Abstraction for External Concerns**: interfaces en `Application` con implementaciones en `Infrastructure` (repositorios, servicios externos, servicio de usuario actual), registradas en DI en [LogiCore.Api/Program.cs](LogiCore.Api/Program.cs#L67-L75), facilitando sustitucion y testing.
 
-## Como Ejecutarlo en Local
-1. Asegurate de tener instalado `.NET 8 SDK`, `docker` y `docker-compose` (opcional para contenedores).
-2. Copia/ajusta la connection string en `LogiCore.Api/appsettings.Development.json`.
-3. Compila y ejecuta desde la raiz del repositorio:
-
-```bash
-dotnet restore
-dotnet build
-dotnet run --project LogiCore.Api/LogiCore.Api.csproj
-```
-
-4. Alternativa con Docker:
-
-```bash
-docker-compose up --build
-```
-
-5. La documentacion OpenAPI suele estar disponible en `http://localhost:5000/swagger` (segun configuracion de `Program.cs`).
-
-## Deployment
-- Incluye `Dockerfile` y `docker-compose.yml` para empaquetado. Tambien existe una carpeta `publish/` con artefactos listos para desplegar.
-- Hay un archivo `migrations.sql` que puede ayudar en entornos donde no se aplican migraciones automaticas.
-
 ## Proximos Pasos
-- Finalizar frontend.
 - Implementacion de rutas optimas mediante heuristicas.
 - Agregar tests unitarios y de integracion (xUnit / NUnit + Testcontainers para DB).
-- Integrar pipeline de CI (GitHub Actions) ejecutando `dotnet build`, `dotnet test` y analisis estatico.
 - Agregar politicas de seguridad: headers, rate limiting y pruebas de endpoints.
 
 ## Redis - Autocompletado de Direcciones
-
 - **Que hace**: Redis se usa como ZSET lexicografico para autocompletar direcciones frecuentes.
 - **Endpoint**: `GET /api/addresses/autocomplete?q=Av.%20Riv` devuelve hasta 5 sugerencias.
 - **Seeding**: al iniciar en desarrollo, el servicio lee `Locations` y carga direcciones en el ZSET `addresses:zset`.
