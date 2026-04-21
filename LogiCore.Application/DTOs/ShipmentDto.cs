@@ -17,7 +17,9 @@ public class ShipmentDto
 	public decimal VehicleMaxWeightCapacity { get; set; }
 	public decimal VehicleMaxVolumeCapacity { get; set; }
 	public int? OriginLocationId { get; set; }
+	public string? OriginLocationName { get; set; }
 	public int? DestinationLocationId { get; set; }
+	public string? DestinationLocationName { get; set; }
 	public ShipmentType? Type { get; set; }
 	public IEnumerable<Guid> PackageIds { get; set; } = Enumerable.Empty<Guid>();
 	public ShipmentStatus Status { get; set; }
