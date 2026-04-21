@@ -19,5 +19,6 @@ namespace LogiCore.Application.Common.Interfaces.Persistence
         Task<Package> UpdateAsync(Package package);
         Task<IEnumerable<Package>> GetManyByIdsAsync(IEnumerable<Guid> ids);
         Task UpdateRangeAsync(IEnumerable<Package> packages);
+        Task UpdateCurrentLocationBulkAsync(IEnumerable<Guid> packageIds, int locationId);
     }
 }

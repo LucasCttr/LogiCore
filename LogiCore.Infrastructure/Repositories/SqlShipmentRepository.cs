@@ -147,11 +147,13 @@ public class SqlShipmentRepository : IShipmentRepository
         foreach (var pkg in shipment.Packages)
         {
             Console.WriteLine($"[UpdateAsync]   - Package {pkg.Id}: Status = {pkg.Status}");
+            // Ensure packages are marked as modified so EF Core tracks them
+            _context.Packages.Update(pkg);
         }
 
         _context.Shipments.Update(shipment);
         
-        Console.WriteLine($"[UpdateAsync] Marked shipment as Updated in context");
+        Console.WriteLine($"[UpdateAsync] Marked shipment and {shipment.Packages.Count} packages as Updated in context");
         return Task.FromResult(shipment);
     }
 

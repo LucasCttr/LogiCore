@@ -5,6 +5,6 @@ namespace LogiCore.Application.Features.Package.MarkAttemptFailed;
 
 public record MarkPackageAttemptFailedCommand : IRequest<Result<bool>>
 {
-    public required Guid PackageId { get; init; }
+    public Guid PackageId { get; init; }
     public string? Reason { get; init; }
 }

@@ -15,15 +15,18 @@ namespace LogiCore.Application.Features.Shipment.FinalizeShipment;
 public class FinalizeShipmentCommandHandler : IRequestHandler<FinalizeShipmentCommand, Result<bool>>
 {
     private readonly IShipmentRepository _shipmentRepository;
+    private readonly IPackageRepository _packageRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<FinalizeShipmentCommandHandler> _logger;
 
     public FinalizeShipmentCommandHandler(
         IShipmentRepository shipmentRepository,
+        IPackageRepository packageRepository,
         IUnitOfWork unitOfWork,
         ILogger<FinalizeShipmentCommandHandler> logger)
     {
         _shipmentRepository = shipmentRepository;
+        _packageRepository = packageRepository;
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
@@ -63,9 +66,22 @@ public class FinalizeShipmentCommandHandler : IRequestHandler<FinalizeShipmentCo
                     pkg.Id, pkg.Status, pkg.CurrentLocationId);
             }
 
-            // 5. Update via repository
+            // 5. Update shipment
             _logger.LogInformation("Calling UpdateAsync()...");
             await _shipmentRepository.UpdateAsync(shipment);
+            
+            // 6. Sync package changes to database
+            _logger.LogInformation("Calling SyncPackagesInDatabaseAsync()...");
+            await _shipmentRepository.SyncPackagesInDatabaseAsync(shipment);
+            
+            // 7. Update package CurrentLocationId to DestinationLocationId if applicable
+            if (shipment.DestinationLocationId.HasValue && shipment.Packages.Any())
+            {
+                _logger.LogInformation("Updating package CurrentLocationId to DestinationLocationId: {DestinationLocationId}", 
+                    shipment.DestinationLocationId);
+                var packageIds = shipment.Packages.Select(p => p.Id).ToList();
+                await _packageRepository.UpdateCurrentLocationBulkAsync(packageIds, shipment.DestinationLocationId.Value);
+            }
             
             _logger.LogInformation("Calling CommitAsync()...");
             await _unitOfWork.CommitAsync(cancellationToken);

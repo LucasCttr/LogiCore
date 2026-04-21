@@ -30,6 +30,12 @@ public class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(e => e.Status)
             .HasConversion<int>()
             .IsRequired();
+
+        // CRITICAL: Configure the backing field for ShipmentType so EF Core persists it
+        builder.Property("_shipmentType")
+            .HasColumnName("ShipmentType")
+            .HasConversion<int>()
+            .IsRequired();
         
         // Optional destination location for inter-depot shipments
         // NULL = last-mile delivery (door-to-door)

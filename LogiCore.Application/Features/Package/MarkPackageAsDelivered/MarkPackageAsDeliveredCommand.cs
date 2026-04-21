@@ -11,8 +11,9 @@ public record MarkPackageAsDeliveredCommand : IRequest<Result<bool>>
 {
     /// <summary>
     /// The ID of the package to mark as delivered.
+    /// Assigned from route parameter in controller.
     /// </summary>
-    public required Guid PackageId { get; init; }
+    public Guid PackageId { get; init; }
 
     /// <summary>
     /// Optional delivery notes or comments from the driver.

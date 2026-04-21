@@ -36,6 +36,11 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
     {
         try
         {
+            Console.WriteLine($"\n========== [CreateShipment] START ==========");
+            Console.WriteLine($"[CreateShipment] OriginLocationId: {request.OriginLocationId}");
+            Console.WriteLine($"[CreateShipment] DestinationLocationId: {request.DestinationLocationId}");
+            Console.WriteLine($"[CreateShipment] Explicit Type: {request.Type}");
+            
             // Validate vehicle exists and is active
             var vehicle = await _vehicleRepository.GetByIdAsync(request.VehicleId);
             if (vehicle == null)
@@ -59,6 +64,7 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
             var routeCode = $"ROUTE-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
 
             // Create shipment
+            Console.WriteLine($"[CreateShipment] Creating shipment with type parameter: {request.Type}");
             var shipment = Domain.Entities.Shipment.Create(
                 routeCode,
                 request.VehicleId,
@@ -69,6 +75,8 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
                 request.DestinationLocationId,
                 request.Type);
 
+            Console.WriteLine($"[CreateShipment] Shipment created with Type: {shipment.Type}");
+            
             // Assign driver and add packages
             shipment.AssignDriver(request.DriverId);
             shipment.AddPackages(packages);
@@ -77,10 +85,15 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
             var added = await _shipmentRepository.AddAsync(shipment);
             await _unitOfWork.CommitAsync(cancellationToken);
 
+            Console.WriteLine($"[CreateShipment] ✓ Shipment saved. Final Type: {added.Type}");
+            Console.WriteLine($"========== [CreateShipment] COMPLETED ==========\n");
+            
             return Result<ShipmentDto>.Success(_mapper.Map<ShipmentDto>(added));
         }
         catch (LogiCore.Domain.Common.Exceptions.DomainException ex)
         {
+            Console.WriteLine($"[CreateShipment] ❌ DomainException: {ex.Message}");
+            Console.WriteLine($"========== [CreateShipment] FAILED ==========\n");
             return Result<ShipmentDto>.Failure(ex.Message, ErrorType.Conflict);
         }
     }

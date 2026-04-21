@@ -47,6 +47,12 @@ public class Shipment : IHasDomainEvents
 
     public static Shipment Create(string routeCode, Guid vehicleId, decimal vehicleMaxWeightCapacity, decimal vehicleMaxVolumeCapacity, DateTime estimatedDelivery, int? originLocationId = null, int? destinationLocationId = null, ShipmentType? shipmentType = null)
     {
+        Console.WriteLine($"[Domain.Shipment.Create] Called with:");
+        Console.WriteLine($"[Domain.Shipment.Create]   routeCode: {routeCode}");
+        Console.WriteLine($"[Domain.Shipment.Create]   originLocationId: {originLocationId}");
+        Console.WriteLine($"[Domain.Shipment.Create]   destinationLocationId: {destinationLocationId}");
+        Console.WriteLine($"[Domain.Shipment.Create]   explicit shipmentType: {shipmentType}");
+        
         if (string.IsNullOrWhiteSpace(routeCode))
             throw new DomainException("Route code is required.");
         if (vehicleId == Guid.Empty)
@@ -61,8 +67,42 @@ public class Shipment : IHasDomainEvents
         if (estimatedDelivery < DateTime.UtcNow)
             throw new DomainException("Estimated delivery date cannot be in the past.");
 
-        // Determine shipment type: explicit parameter or inferred from locationIds
-        var type = shipmentType ?? (originLocationId.HasValue ? ShipmentType.Pickup : destinationLocationId.HasValue ? ShipmentType.Transfer : ShipmentType.LastMile);
+        // Determine shipment type: explicit parameter takes precedence
+        // If not provided, inferred from locationIds
+        var type = shipmentType;
+        
+        if (!type.HasValue)
+        {
+            // Infer type based on locations:
+            // - Pickup: has OriginLocationId (collecting from depot)
+            // - Transfer: has both OriginLocationId and DestinationLocationId (depot-to-depot)
+            // - LastMile: has only DestinationLocationId (delivery to customer address)
+            if (originLocationId.HasValue && destinationLocationId.HasValue)
+            {
+                type = ShipmentType.Transfer;
+                Console.WriteLine($"[Domain.Shipment.Create] INFERRED: Transfer (both locations)");
+            }
+            else if (originLocationId.HasValue)
+            {
+                type = ShipmentType.Pickup;
+                Console.WriteLine($"[Domain.Shipment.Create] INFERRED: Pickup (only origin)");
+            }
+            else if (destinationLocationId.HasValue)
+            {
+                type = ShipmentType.LastMile;
+                Console.WriteLine($"[Domain.Shipment.Create] INFERRED: LastMile (only destination)");
+            }
+            else
+            {
+                throw new DomainException("Shipment must have at least an origin or destination location.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"[Domain.Shipment.Create] USING EXPLICIT TYPE: {type}");
+        }
+
+        Console.WriteLine($"[Domain.Shipment.Create] Final type: {type}");
 
         return new Shipment
         {
@@ -76,7 +116,7 @@ public class Shipment : IHasDomainEvents
             EstimatedDelivery = estimatedDelivery,
             OriginLocationId = originLocationId,
             DestinationLocationId = destinationLocationId,
-            _shipmentType = type
+            _shipmentType = type!.Value // At this point, type is guaranteed to have a value
         };
     }
 
@@ -207,11 +247,42 @@ public class Shipment : IHasDomainEvents
 
     public void MarkAsDelivered()
     {
+        Console.WriteLine($"[Domain.MarkAsDelivered] Called for Shipment {Id}, Type: {Type}, Status: {Status}");
+        
         if (Status != ShipmentStatus.Dispatched && Status != ShipmentStatus.Arrived)
             throw new DomainException("Only dispatched or arrived shipments can be marked as delivered.");
 
         DeliveredAt = DateTime.UtcNow;
         Status = ShipmentStatus.Delivered;
+        Console.WriteLine($"[Domain.MarkAsDelivered] Shipment status changed to: {Status}");
+
+        // Synchronize packages based on shipment type
+        Console.WriteLine($"[Domain.MarkAsDelivered] Shipment Type check: Type={Type}");
+        
+        if (Type == ShipmentType.Pickup)
+        {
+            Console.WriteLine($"[Domain.MarkAsDelivered] Executing Pickup logic: SyncCollectedPackagesToDepot()");
+            // For Pickup shipments: move collected packages to AtDepot
+            SyncCollectedPackagesToDepot();
+        }
+        else if (Type == ShipmentType.Transfer)
+        {
+            Console.WriteLine($"[Domain.MarkAsDelivered] Executing Transfer logic: SyncPackagesToDepot() [InTransit->AtDepot]");
+            // For Transfer (depot-to-depot): move InTransit to AtDepot
+            SyncPackagesToDepot();
+        }
+        else if (Type == ShipmentType.LastMile)
+        {
+            Console.WriteLine($"[Domain.MarkAsDelivered] Executing LastMile logic: SyncPackagesToDelivered() [InTransit->Delivered]");
+            // For LastMile: move InTransit to Delivered
+            SyncPackagesToDelivered();
+        }
+
+        Console.WriteLine($"[Domain.MarkAsDelivered] After sync:");
+        foreach (var pkg in _packages)
+        {
+            Console.WriteLine($"[Domain.MarkAsDelivered]   - Package {pkg.Id}: {pkg.Status}");
+        }
 
         AddDomainEvent(new ShipmentDeliveredEvent
         {
@@ -285,22 +356,26 @@ public class Shipment : IHasDomainEvents
     {
         Console.WriteLine($"[Domain.SyncPackagesToInTransit] Called. Type: {Type}");
         
-        // For non-Pickup shipments, move all packages to InTransit
-        if (Type != ShipmentType.Pickup)
+        // Pickup shipments: packages don't transition to InTransit
+        // They stay Pending/AtDepot until driver scans them (Collected state)
+        if (Type == ShipmentType.Pickup)
         {
-            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Non-Pickup shipment, updating packages");
-            foreach (var package in _packages)
+            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Pickup shipment - NO state change on START");
+            return;
+        }
+
+        // Move packages to InTransit when shipment starts (Transfer/LastMile only)
+        foreach (var package in _packages)
+        {
+            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Package {package.Id}: {package.Status}");
+            
+            // Move AtDepot and Pending packages to InTransit
+            if (package.Status == PackageStatus.AtDepot || package.Status == PackageStatus.Pending)
             {
-                Console.WriteLine($"[Domain.SyncPackagesToInTransit] Before: Package {package.Id} Status = {package.Status}");
+                Console.WriteLine($"[Domain.SyncPackagesToInTransit] Moving {package.Status} -> InTransit");
                 package.StartTransit();
-                Console.WriteLine($"[Domain.SyncPackagesToInTransit] After: Package {package.Id} Status = {package.Status}");
             }
         }
-        else
-        {
-            Console.WriteLine($"[Domain.SyncPackagesToInTransit] Pickup shipment, packages staying in current state");
-        }
-        // For Pickup shipments, packages stay in their current state (Pending/Collected)
     }
 
     /// <summary>
@@ -309,12 +384,20 @@ public class Shipment : IHasDomainEvents
     /// </summary>
     private void SyncPackagesToDepot()
     {
+        Console.WriteLine($"[Domain.SyncPackagesToDepot] Called for Shipment {Id}, Type: {Type}");
         foreach (var package in _packages)
         {
+            Console.WriteLine($"[Domain.SyncPackagesToDepot] Package {package.Id}: CurrentStatus = {package.Status}");
+            
             // Only move packages that are already in transit. Leave pending packages as-is.
             if (package.Status == PackageStatus.InTransit)
             {
+                Console.WriteLine($"[Domain.SyncPackagesToDepot] Moving {package.Id} from InTransit -> AtDepot");
                 package.MoveToDepot();
+            }
+            else
+            {
+                Console.WriteLine($"[Domain.SyncPackagesToDepot] Package {package.Id} not in InTransit, skipping");
             }
             // Pending packages stay Pending - they weren't collected by the driver
         }
@@ -323,14 +406,55 @@ public class Shipment : IHasDomainEvents
     /// <summary>
     /// Synchronizes all collected packages to AtDepot status when Pickup shipment completes.
     /// This transitions packages from Collected → AtDepot when driver finishes the pickup.
+    /// Also ensures AtDepot packages remain AtDepot
     /// </summary>
     private void SyncCollectedPackagesToDepot()
     {
+        Console.WriteLine($"[Domain.SyncCollectedPackagesToDepot] Called for Pickup Shipment {Id}");
         foreach (var package in _packages)
         {
-            if (package.Status == PackageStatus.Collected)
+            Console.WriteLine($"[Domain.SyncCollectedPackagesToDepot] Package {package.Id}: CurrentStatus = {package.Status}");
+            
+            // Move Collected packages to AtDepot, and ensure AtDepot packages stay AtDepot
+            if (package.Status == PackageStatus.Collected || package.Status == PackageStatus.AtDepot)
             {
-                package.MoveToDepot();
+                if (package.Status != PackageStatus.AtDepot)
+                {
+                    Console.WriteLine($"[Domain.SyncCollectedPackagesToDepot] Moving {package.Id} from {package.Status} -> AtDepot");
+                    package.MoveToDepot();
+                }
+                else
+                {
+                    Console.WriteLine($"[Domain.SyncCollectedPackagesToDepot] Package {package.Id} already AtDepot, keeping it");
+                }
+                // If already AtDepot, keep it there (no state change needed)
+            }
+            else
+            {
+                Console.WriteLine($"[Domain.SyncCollectedPackagesToDepot] Package {package.Id} not Collected or AtDepot, skipping");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes all in-transit packages to Delivered status when Transfer/LastMile shipment completes.
+    /// This transitions packages from InTransit → Delivered when driver finishes delivery.
+    /// </summary>
+    private void SyncPackagesToDelivered()
+    {
+        Console.WriteLine($"[Domain.SyncPackagesToDelivered] Called for LastMile Shipment {Id}");
+        foreach (var package in _packages)
+        {
+            Console.WriteLine($"[Domain.SyncPackagesToDelivered] Package {package.Id}: CurrentStatus = {package.Status}");
+            
+            if (package.Status == PackageStatus.InTransit)
+            {
+                Console.WriteLine($"[Domain.SyncPackagesToDelivered] Moving {package.Id} from InTransit -> Delivered");
+                package.DeliverToCenter();
+            }
+            else
+            {
+                Console.WriteLine($"[Domain.SyncPackagesToDelivered] Package {package.Id} not in InTransit, skipping");
             }
         }
     }
@@ -343,15 +467,21 @@ public class Shipment : IHasDomainEvents
     /// </summary>
     public void FinalizeShipment()
     {
+        Console.WriteLine($"[Domain.FinalizeShipment] Called for Shipment {Id}, Type: {Type}, Status: {Status}");
+        
         if (Status != ShipmentStatus.Dispatched && Status != ShipmentStatus.Arrived)
             throw new DomainException("Only dispatched or arrived shipments can be finalized.");
 
         DeliveredAt = DateTime.UtcNow;
         Status = ShipmentStatus.Delivered;
+        Console.WriteLine($"[Domain.FinalizeShipment] Status changed to: {Status}");
 
         // Type-specific finalization logic
+        Console.WriteLine($"[Domain.FinalizeShipment] Processing packages based on Type={Type}");
+        
         if (Type == ShipmentType.Pickup)
         {
+            Console.WriteLine($"[Domain.FinalizeShipment] Executing Pickup logic");
             // For pickup: move collected/pending packages to AtDepot
             // Use shipment's destination location as fallback (where the pickup delivery was sent)
             foreach (var package in _packages)
@@ -362,11 +492,12 @@ public class Shipment : IHasDomainEvents
                     int? locationId = package.CurrentLocationId ?? DestinationLocationId;
                     if (locationId.HasValue && locationId > 0)
                     {
+                        Console.WriteLine($"[Domain.FinalizeShipment] Moving {package.Id} to {package.Status} -> AtDepot at location {locationId}");
                         package.MoveToDepotAt(locationId.Value);
                     }
                     else
                     {
-                        // If no location available, just change status without location
+                        Console.WriteLine($"[Domain.FinalizeShipment] Moving {package.Id} to {package.Status} -> AtDepot (no location)");
                         package.MoveToDepot();
                     }
                 }
@@ -374,17 +505,34 @@ public class Shipment : IHasDomainEvents
         }
         else if (Type == ShipmentType.Transfer && DestinationLocationId.HasValue)
         {
+            Console.WriteLine($"[Domain.FinalizeShipment] Executing Transfer logic - moving InTransit packages to AtDepot at {DestinationLocationId}");
             // For depot-to-depot transfers: move all InTransit packages to AtDepot at destination
             foreach (var package in _packages)
             {
+                Console.WriteLine($"[Domain.FinalizeShipment] Package {package.Id}: Status = {package.Status}");
+                
                 if (package.Status == PackageStatus.InTransit)
                 {
+                    Console.WriteLine($"[Domain.FinalizeShipment] Moving {package.Id} from InTransit -> AtDepot at location {DestinationLocationId}");
                     package.MoveToDepotAt(DestinationLocationId.Value);
+                }
+                else
+                {
+                    Console.WriteLine($"[Domain.FinalizeShipment] Package {package.Id} not in InTransit, skipping");
                 }
             }
         }
-        // For LastMile: packages keep their current status
-        // (Delivery statuses are determined by individual package operations)
+        else if (Type == ShipmentType.LastMile)
+        {
+            Console.WriteLine($"[Domain.FinalizeShipment] Executing LastMile logic - packages keep their status");
+            // LastMile: packages keep their current status (delivery is handled individually)
+        }
+
+        Console.WriteLine($"[Domain.FinalizeShipment] After processing:");
+        foreach (var pkg in _packages)
+        {
+            Console.WriteLine($"[Domain.FinalizeShipment]   - Package {pkg.Id}: {pkg.Status}");
+        }
 
         AddDomainEvent(new ShipmentDeliveredEvent
         {

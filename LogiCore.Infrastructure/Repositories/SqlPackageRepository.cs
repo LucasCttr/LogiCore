@@ -118,4 +118,23 @@ public class SqlPackageRepository : IPackageRepository
         _context.Packages.UpdateRange(packages);
         return Task.CompletedTask;
     }
+
+    public async Task UpdateCurrentLocationBulkAsync(IEnumerable<Guid> packageIds, int locationId)
+    {
+        var ids = packageIds.ToList();
+        if (!ids.Any()) return;
+
+        var now = DateTime.UtcNow;
+        
+        Console.WriteLine($"[SqlPackageRepository.UpdateCurrentLocationBulkAsync] Updating {ids.Count} packages to CurrentLocationId={locationId}");
+        
+        var updated = await _context.Packages
+            .Where(p => ids.Contains(p.Id))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.CurrentLocationId, locationId)
+                .SetProperty(p => p.LastUpdatedAt, now)
+            );
+        
+        Console.WriteLine($"[SqlPackageRepository.UpdateCurrentLocationBulkAsync] Updated {updated} packages");
+    }
 }
