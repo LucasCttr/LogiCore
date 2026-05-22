@@ -40,7 +40,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost]
-    public async Task<ActionResult<Result<ShipmentDto>>> Create([FromBody] CreateShipmentCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<ShipmentDto>>> Create([FromBody] CreateShipmentCommand request)
     {
         var result = await _mediator.Send(request);
         return result;
@@ -49,7 +49,7 @@ public class ShipmentsController : ControllerBase
     // GET: api/shipments (Admin only) - supports paging, sorting and filtering via query params
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<ActionResult<Result<PagedResultDto<ShipmentDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? sortBy = null, [FromQuery] string? sortDir = null, [FromQuery] string? status = null, [FromQuery] string? q = null)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<PagedResultDto<ShipmentDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? sortBy = null, [FromQuery] string? sortDir = null, [FromQuery] string? status = null, [FromQuery] string? q = null)
     {
         var result = await _mediator.Send(new GetShipmentsQuery(page, pageSize, sortBy, sortDir, status, q));
         return result;
@@ -58,14 +58,14 @@ public class ShipmentsController : ControllerBase
     // GET: api/shipments/me (Driver only) - shipments assigned to current driver
     [Authorize(Roles = "Driver")]
     [HttpGet("me")]
-    public async Task<ActionResult<Result<IEnumerable<ShipmentDto>>>> GetMyShipments()
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<IEnumerable<ShipmentDto>>>> GetMyShipments()
     {
         var currentUserId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
 
         // get driver id for current user
         var driverResult = await _mediator.Send(new GetDriverByUserQuery(currentUserId));
-        if (driverResult == null || !driverResult.IsSuccess) return Result<IEnumerable<ShipmentDto>>.Failure("Driver profile not found.", ErrorType.NotFound);
+        if (driverResult == null || !driverResult.IsSuccess) return LogiCore.Application.Common.Models.Result<IEnumerable<ShipmentDto>>.Failure("Driver profile not found.", ErrorType.NotFound);
 
         var driverId = driverResult.Value!.Id;
         var shipmentsResult = await _mediator.Send(new GetShipmentsByDriverQuery(driverId));
@@ -74,7 +74,7 @@ public class ShipmentsController : ControllerBase
 
     // GET: api/shipments/{id}
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Result<ShipmentDto>>> GetById(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<ShipmentDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetShipmentByIdQuery(id));
         if (result == null) return NotFound();
@@ -101,7 +101,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/packages
     [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/packages")]
-    public async Task<ActionResult<Result<ShipmentDto>>> AddPackage(Guid id, [FromBody] AddPackageToShipmentCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<ShipmentDto>>> AddPackage(Guid id, [FromBody] AddPackageToShipmentCommand request)
     {
         // ensure route id is used
         request.ShipmentId = id;
@@ -112,7 +112,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/add-packages (Admin only) - add multiple packages at once
     [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/add-packages")]
-    public async Task<ActionResult<Result<bool>>> AddPackages(Guid id, [FromBody] List<Guid> packageIds)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> AddPackages(Guid id, [FromBody] List<Guid> packageIds)
     {
         var command = new AddPackagesToShipmentCommand 
         { 
@@ -126,7 +126,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/dispatch (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/dispatch")]
-    public async Task<ActionResult<Result<bool>>> Dispatch(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Dispatch(Guid id)
     {
         var result = await _mediator.Send(new DispatchShipmentCommand { ShipmentId = id });
         return result;
@@ -138,7 +138,7 @@ public class ShipmentsController : ControllerBase
     // Packages are scanned separately using scanner endpoint
     [Authorize(Roles = "Driver")]
     [HttpPost("{id:guid}/start")]
-    public async Task<ActionResult<Result<bool>>> Start(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Start(Guid id)
     {
         // Ensure only assigned driver can start their shipments
         var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
@@ -161,7 +161,7 @@ public class ShipmentsController : ControllerBase
 
     // POST: api/shipments/{id}/assign-driver
     [HttpPost("{id:guid}/assign-driver")]
-    public async Task<ActionResult<Result<bool>>> AssignDriver(Guid id, [FromBody] AssignDriverToShipmentCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> AssignDriver(Guid id, [FromBody] AssignDriverToShipmentCommand request)
     {
         request.ShipmentId = id;
         var result = await _mediator.Send(request);
@@ -171,7 +171,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/arrive (Driver only)
     [Authorize(Roles = "Driver")]
     [HttpPost("{id:guid}/arrive")]
-    public async Task<ActionResult<Result<bool>>> Arrive(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Arrive(Guid id)
     {
         // ensure only assigned driver can mark arrival
         var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
@@ -197,7 +197,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/complete (Driver only)
     [Authorize(Roles = "Driver")]
     [HttpPost("{id:guid}/complete")]
-    public async Task<ActionResult<Result<bool>>> Complete(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Complete(Guid id)
     {
         // ensure only assigned driver can complete
         var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
@@ -225,7 +225,7 @@ public class ShipmentsController : ControllerBase
     // - LastMile: marks as Delivered, packages keep their status
     [Authorize(Roles = "Driver")]
     [HttpPost("{id:guid}/finalize")]
-    public async Task<ActionResult<Result<bool>>> Finalize(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Finalize(Guid id)
     {
         // ensure only assigned driver can finalize
         var getResult = await _mediator.Send(new GetShipmentByIdQuery(id));
@@ -249,7 +249,7 @@ public class ShipmentsController : ControllerBase
     // POST: api/shipments/{id}/cancel (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost("{id:guid}/cancel")]
-    public async Task<ActionResult<Result<bool>>> Cancel(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<bool>>> Cancel(Guid id)
     {
         var result = await _mediator.Send(new CancelShipmentCommand { ShipmentId = id });
         return result;

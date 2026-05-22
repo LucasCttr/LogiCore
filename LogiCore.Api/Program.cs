@@ -17,6 +17,7 @@ using MediatR;
 using LogiCore.Application.Common.Behaviors;
 using Serilog;
 using Prometheus;
+using LogiCore.Api.GraphQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,10 @@ builder.Services.AddControllers(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<Query>()
+    .AddMutationType<Mutation>();
 builder.Services.AddAutoMapper(typeof(Program).Assembly, typeof(CreatePackageCommandHandler).Assembly);
 
 // --- CORS ---
@@ -207,6 +212,7 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGraphQL("/graphql");
 app.MapControllers();
 
 // --- Seed admin user (development convenience) ---

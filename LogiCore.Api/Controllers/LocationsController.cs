@@ -19,7 +19,7 @@ public class LocationsController : ControllerBase
     // GET: api/locations (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<ActionResult<Result<IEnumerable<LocationDto>>>> GetAll()
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<IEnumerable<LocationDto>>>> GetAll()
     {
         var result = await _mediator.Send(new GetAllLocationsQuery());
         return result;
@@ -28,7 +28,7 @@ public class LocationsController : ControllerBase
     // POST: api/locations (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost]
-    public async Task<ActionResult<Result<LocationDto>>> Create([FromBody] CreateLocationCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LocationDto>>> Create([FromBody] CreateLocationCommand request)
     {
         var result = await _mediator.Send(request);
         return result;

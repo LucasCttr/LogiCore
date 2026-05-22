@@ -22,7 +22,7 @@ public class UsersController : ControllerBase
 
     // GET: api/users
     [HttpGet]
-    public async Task<ActionResult<Result<PagedResult<UserDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 15)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<PagedResult<UserDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 15)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 15;
@@ -34,7 +34,7 @@ public class UsersController : ControllerBase
 
     // POST: api/users (Register a new user)
     [HttpPost]
-    public async Task<ActionResult<Result<UserDto>>> Register([FromBody] RegisterUserCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<UserDto>>> Register([FromBody] RegisterUserCommand request)
     {
         var result = await _mediator.Send(request);
         return result;

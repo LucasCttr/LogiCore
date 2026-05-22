@@ -38,7 +38,7 @@ public class DriversController : ControllerBase
     // POST: api/drivers/register (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpPost("register")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> Register([FromBody] RegisterDriverCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> Register([FromBody] RegisterDriverCommand request)
     {
         var result = await _mediator.Send(request);
         return result;
@@ -47,7 +47,7 @@ public class DriversController : ControllerBase
     // GET: api/drivers (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<ActionResult<Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAll()
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAll()
     {
         var result = await _mediator.Send(new GetAllDriversQuery());
         return result;
@@ -56,7 +56,7 @@ public class DriversController : ControllerBase
     // GET: api/drivers/available (Admin only)
     [Authorize(Roles = "Admin")]
     [HttpGet("available")]
-    public async Task<ActionResult<Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAvailable()
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<IEnumerable<LogiCore.Application.DTOs.DriverDto>>>> GetAvailable()
     {
         var result = await _mediator.Send(new LogiCore.Application.Features.Driver.GetAvailable.GetAvailableDriversQuery());
         return result;
@@ -65,7 +65,7 @@ public class DriversController : ControllerBase
     // GET: api/drivers/details (Admin only - new endpoint for drivers from DriverDetails table)
     [Authorize(Roles = "Admin")]
     [HttpGet("details")]
-    public async Task<ActionResult<Result<LogiCore.Application.Common.Models.PagedResult<LogiCore.Application.DTOs.DriverDetailsWithUserDto>>>> GetAllDetails([FromQuery] int page = 1, [FromQuery] int pageSize = 15, [FromQuery] string? search = null, [FromQuery] bool? isActive = null)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.Common.Models.PagedResult<LogiCore.Application.DTOs.DriverDetailsWithUserDto>>>> GetAllDetails([FromQuery] int page = 1, [FromQuery] int pageSize = 15, [FromQuery] string? search = null, [FromQuery] bool? isActive = null)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 15;
@@ -85,7 +85,7 @@ public class DriversController : ControllerBase
 
     // GET: api/drivers/{id}
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> GetById(Guid id)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> GetById(Guid id)
     {
         var result = await _mediator.Send(new GetDriverByIdQuery(id));
         if (result == null) return NotFound();
@@ -107,7 +107,7 @@ public class DriversController : ControllerBase
     // GET: api/drivers/me
     [Authorize(Roles = "Driver")]
     [HttpGet("me")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> GetMyProfile()
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> GetMyProfile()
     {
         var currentUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(currentUserId)) return Forbid();
@@ -118,7 +118,7 @@ public class DriversController : ControllerBase
 
     // PUT: api/drivers/{id}/status
     [HttpPut("{id:guid}/status")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> UpdateStatus(Guid id, [FromBody] UpdateDriverStatusCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> UpdateStatus(Guid id, [FromBody] UpdateDriverStatusCommand request)
     {
         // authorize: admins can update any driver; drivers can only update their own status
         var getResult = await _mediator.Send(new GetDriverByIdQuery(id));
@@ -137,7 +137,7 @@ public class DriversController : ControllerBase
 
     // PUT: api/drivers/{id}
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> UpdateDriver(Guid id, [FromBody] UpdateDriverCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> UpdateDriver(Guid id, [FromBody] UpdateDriverCommand request)
     {
         // authorize: admins can update any driver; drivers can only update their own profile
         var getResult = await _mediator.Send(new GetDriverByIdQuery(id));
@@ -157,7 +157,7 @@ public class DriversController : ControllerBase
     // PUT: api/drivers/{id}/assign-vehicle
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}/assign-vehicle")]
-    public async Task<ActionResult<Result<LogiCore.Application.DTOs.DriverDto>>> AssignVehicle(Guid id, [FromBody] AssignVehicleRequest request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<LogiCore.Application.DTOs.DriverDto>>> AssignVehicle(Guid id, [FromBody] AssignVehicleRequest request)
     {
         // Try to use the provided ID as Driver ID
         Guid driverId = id;

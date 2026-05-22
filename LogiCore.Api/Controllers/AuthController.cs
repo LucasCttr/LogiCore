@@ -35,14 +35,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<Result<UserDto>>> Register([FromBody] RegisterUserCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<UserDto>>> Register([FromBody] RegisterUserCommand request)
     {
         var result = await _mediator.Send(request);
         return result;
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<Result<AuthResponseDto>>> Login([FromBody] LoginUserCommand request)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<AuthResponseDto>>> Login([FromBody] LoginUserCommand request)
     {
         var result = await _mediator.Send(request);
         // If login succeeded and a refresh token was returned in the DTO, set it as an HttpOnly cookie for silent refresh
@@ -61,16 +61,16 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    public async Task<ActionResult<Result<AuthResponseDto>>> Refresh([FromBody] RefreshRequest? body)
+    public async Task<ActionResult<LogiCore.Application.Common.Models.Result<AuthResponseDto>>> Refresh([FromBody] RefreshRequest? body)
     {
         // Check cookie first, then body
         var refreshToken = Request.Cookies["refreshToken"] ?? body?.RefreshToken;
         if (string.IsNullOrWhiteSpace(refreshToken))
-            return Result<AuthResponseDto>.Failure("Missing refresh token");
+            return LogiCore.Application.Common.Models.Result<AuthResponseDto>.Failure("Missing refresh token");
 
         var user = await _refreshTokenService.ValidateRefreshTokenAsync(refreshToken);
         if (user == null)
-            return Result<AuthResponseDto>.Failure("Invalid refresh token");
+            return LogiCore.Application.Common.Models.Result<AuthResponseDto>.Failure("Invalid refresh token");
 
         // include roles in token
         var roles = await _userManager.GetRolesAsync(user);
@@ -94,7 +94,7 @@ public class AuthController : ControllerBase
         };
         Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
 
-        return Result<AuthResponseDto>.Success(authResponse);
+        return LogiCore.Application.Common.Models.Result<AuthResponseDto>.Success(authResponse);
     }
 
     public record RefreshRequest(string? RefreshToken);
