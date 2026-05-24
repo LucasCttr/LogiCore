@@ -52,8 +52,16 @@ public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Result<
 
         var tokenString = _jwtProvider.CreateToken(user.Id, user.Email ?? string.Empty, additionalClaims);
 
-        // create a refresh token persisted in DB
-        var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+        // Create a refresh token if persistence is available; do not fail the whole login flow if this step breaks.
+        string? refreshToken = null;
+        try
+        {
+            refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Login succeeded for user {UserId}, but refresh token creation failed.", user.Id);
+        }
 
         var userDto = _mapper.Map<UserDto>(user);
         var authResponse = new AuthResponseDto(tokenString, userDto, refreshToken);

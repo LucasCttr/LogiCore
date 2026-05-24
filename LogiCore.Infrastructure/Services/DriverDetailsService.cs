@@ -24,40 +24,47 @@ public class DriverDetailsService : IDriverDetailsService
     {
         try
         {
-            var query = _dbContext.DriverDetails
+            var allDriverDetails = await _dbContext.DriverDetails
+                .AsNoTracking()
                 .Include(dd => dd.User)
-                .AsQueryable();
+                .ToListAsync(cancellationToken);
 
-            // Apply search filter
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                var lowerSearch = searchTerm.ToLower();
-                query = query.Where(dd =>
-                    dd.User!.FirstName.ToLower().Contains(lowerSearch) ||
-                    dd.User.LastName.ToLower().Contains(lowerSearch) ||
-                    dd.User.Email.ToLower().Contains(lowerSearch) ||
-                    dd.LicenseNumber.ToLower().Contains(lowerSearch)
-                );
-            }
+            var filteredDriverDetails = allDriverDetails
+                .Where(dd =>
+                {
+                    var isCurrentlyActive = dd.User != null && (!dd.User.LockoutEnd.HasValue || dd.User.LockoutEnd <= DateTimeOffset.UtcNow);
 
-            // Apply active filter
-            if (isActive.HasValue)
-            {
-                query = query.Where(dd =>
-                    (!dd.User!.LockoutEnd.HasValue || dd.User.LockoutEnd <= DateTimeOffset.UtcNow) == isActive.Value
-                );
-            }
+                    if (isActive.HasValue && isCurrentlyActive != isActive.Value)
+                    {
+                        return false;
+                    }
 
-            // Count total before pagination
-            var totalCount = await query.CountAsync(cancellationToken);
+                    if (string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        return true;
+                    }
 
-            // Apply pagination
-            var paginatedDriverDetails = await query
-                .OrderBy(dd => dd.User!.FirstName)
-                .ThenBy(dd => dd.User!.LastName)
+                    var lowerSearch = searchTerm.Trim().ToLowerInvariant();
+                    var firstName = dd.User?.FirstName?.ToLowerInvariant() ?? string.Empty;
+                    var lastName = dd.User?.LastName?.ToLowerInvariant() ?? string.Empty;
+                    var email = dd.User?.Email?.ToLowerInvariant() ?? string.Empty;
+                    var licenseNumber = dd.LicenseNumber?.ToLowerInvariant() ?? string.Empty;
+
+                    return firstName.Contains(lowerSearch)
+                        || lastName.Contains(lowerSearch)
+                        || email.Contains(lowerSearch)
+                        || licenseNumber.Contains(lowerSearch);
+                })
+                .OrderBy(dd => dd.User?.FirstName ?? string.Empty)
+                .ThenBy(dd => dd.User?.LastName ?? string.Empty)
+                .ToList();
+
+            var totalCount = filteredDriverDetails.Count;
+
+            var paginatedDriverDetails = filteredDriverDetails
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync(cancellationToken);
+                .ToList();
 
             var vehicleIds = paginatedDriverDetails
                 .Where(dd => dd.AssignedVehicleId.HasValue)
