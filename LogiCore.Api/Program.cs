@@ -212,6 +212,30 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/graphql") &&
+        context.Request.Headers.Authorization.Count > 0 &&
+        context.User?.Identity?.IsAuthenticated != true)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        context.Response.ContentType = "application/graphql-response+json; charset=utf-8";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            errors = new[]
+            {
+                new { message = "Unauthorized" }
+            },
+            data = (object?)null
+        });
+
+        return;
+    }
+
+    await next();
+});
+
 app.MapGraphQL("/graphql");
 app.MapControllers();
 
